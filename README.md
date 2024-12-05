@@ -1,25 +1,16 @@
----
-title: Auth + JWT
-keywords: [auth, jwt, gorm, fiber]
-description: Simple JWT authentication.
----
+# An API starter template I created using Go, Fiber, GORM, and JWT
 
-# Auth JWT Example
-
-[![Github](https://img.shields.io/static/v1?label=&message=Github&color=2ea44f&style=for-the-badge&logo=github)](https://github.com/gofiber/recipes/tree/master/auth-jwt) [![StackBlitz](https://img.shields.io/static/v1?label=&message=StackBlitz&color=2ea44f&style=for-the-badge&logo=StackBlitz)](https://stackblitz.com/github/gofiber/recipes/tree/master/auth-jwt)
-
-This example demonstrates a boilerplate setup for a Go Fiber application that uses JWT for authentication.
+This is a boilerplate setup for a Go Fiber application that uses JWT for authentication.
 
 ## Description
 
-This project provides a starting point for building a web application with user authentication using JWT. It leverages Fiber for the web framework and GORM for ORM.
+This project provides a starting point for building a web API with user authentication using JWT. It leverages Fiber for the web framework and GORM for the ORM.
 
 ## Requirements
 
-- [Go](https://golang.org/dl/) 1.18 or higher
-- [Git](https://git-scm.com/downloads)
+- [Go](https://go.dev/doc/install) version 1.23.3
 
-## Setup
+<!-- ## Setup
 
 1. Clone the repository:
     ```bash
@@ -55,7 +46,7 @@ You can manage the database via `psql` with the following command:
 psql -U <DB_USER> -d <DB_NAME> -h localhost -p <DB_PORT>
 ```
 
-Replace `<DB_USER>`, `<DB_NAME>`, and `<DB_PORT>` with the values from your `.env` file.
+Replace `<DB_USER>`, `<DB_NAME>`, and `<DB_PORT>` with the values from your `.env` file. -->
 
 ## API Endpoints
 
@@ -72,7 +63,7 @@ The following endpoints are available in the API:
 - **POST /api/product**: Create a new product (requires a valid JWT).
 - **DELETE /api/product/:id**: Delete a product (requires a valid JWT).
 
-## Example Usage
+<!-- ## Example Usage
 
 1. Register a new user:
     ```bash
@@ -93,7 +84,7 @@ Replace `<JWT>` with the token received from the login endpoint.
 
 ## Conclusion
 
-This example provides a basic setup for a Go Fiber application with JWT authentication. It can be extended and customized further to fit the needs of more complex applications.
+This example provides a basic setup for a Go Fiber application with JWT authentication. It can be extended and customized further to fit the needs of more complex applications. -->
 
 ## References
 
