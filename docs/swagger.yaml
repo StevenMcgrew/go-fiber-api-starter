@@ -1,0 +1,31 @@
+basePath: /api
+host: localhost:3000
+info:
+  contact: {}
+  description: Documentation for this API
+  title: Go Fiber API Starter
+  version: "1.0"
+paths:
+  /api/v1/user/:id:
+    get:
+      consumes:
+      - application/json
+      description: get string by ID
+      operationId: get-string-by-int
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Get a User
+swagger: "2.0"

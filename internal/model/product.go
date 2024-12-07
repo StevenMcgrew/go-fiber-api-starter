@@ -2,6 +2,8 @@ package model
 
 import "gorm.io/gorm"
 
+// How to declare gorm models: https://gorm.io/docs/models.html
+
 // Product struct
 type Product struct {
 	gorm.Model

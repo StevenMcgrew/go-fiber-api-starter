@@ -41,7 +41,6 @@ func validUser(id string, p string) bool {
 	return true
 }
 
-// GetUser get a user
 func GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	db := database.DB

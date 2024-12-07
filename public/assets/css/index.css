@@ -1,0 +1,45 @@
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header>div>button {
+    margin-inline: 1px;
+}
+
+[popover] {
+    position: fixed;
+    inset: 0;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+    border: 1px solid var(--nc-bg-3);
+    padding: 0.25em;
+    overflow: auto;
+    background-color: var(--nc-bg-2);
+    color: inherit;
+}
+
+[popover] input {
+    background-color: var(--nc-bg-1);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    padding-inline: 30px;
+    padding-block: 20px;
+    margin-bottom: 0;
+}
+
+.auth-form h3 {
+    padding-top: 7px;
+    padding-bottom: 20px;
+}
+
+.form-btn-box {
+    display: flex;
+    justify-content: space-evenly;
+    padding-top: 23px;
+}
