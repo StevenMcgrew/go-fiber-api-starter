@@ -5,6 +5,7 @@ import (
 
 	"go-fiber-api-starter/internal/database"
 	"go-fiber-api-starter/internal/model"
+	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -52,35 +53,51 @@ func GetUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
 }
 
-// CreateUser new user
 func CreateUser(c *fiber.Ctx) error {
-	type NewUser struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-	}
 
-	db := database.DB
-	user := new(model.User)
+	user := &model.User{}
+
+	// Parse body
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
 
-	hash, err := hashPassword(user.Password)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't hash password", "data": err})
+	// Set missing data
+	user.Type = "user"
+	user.Status = "unverified"
+
+	// Validate user
+	if err := validation.ValidateUser(user); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": err})
 	}
 
-	user.Password = hash
-	if err := db.Create(&user).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
-	}
+	// Check if email is already taken
 
-	newUser := NewUser{
-		Email:    user.Email,
-		Username: user.Username,
-	}
+	// Check if username is already taken
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
+	// Hash password
+
+	// Save user to database
+
+	// Create JWT for email verification
+
+	// Create URL link for email verification
+
+	// Send verification email with link
+
+	// Respond with 201 and user data
+
+	// hash, err := hashPassword(user.Password)
+	// if err != nil {
+	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't hash password", "data": err})
+	// }
+
+	// user.Password = hash
+	// if err := database.DB.Create(&user).Error; err != nil {
+	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
+	// }
+
+	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": *user})
 }
 
 // UpdateUser update user
@@ -103,7 +120,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	var user model.User
 
 	db.First(&user, id)
-	user.Names = uui.Names
+	// user.Names = uui.Names
 	db.Save(&user)
 
 	return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": user})
