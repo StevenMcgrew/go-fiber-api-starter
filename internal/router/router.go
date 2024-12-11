@@ -1,6 +1,7 @@
 package router
 
 import (
+	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/handler"
 	"go-fiber-api-starter/internal/middleware"
 
@@ -13,18 +14,10 @@ import (
 func SetupRoutes(app *fiber.App) {
 
 	// Logger
-	// https://docs.gofiber.io/api/middleware/logger
-	app.Use(logger.New())
+	app.Use(logger.New(config.FiberLoggerConfig))
 
 	// CORS
-	// https://docs.gofiber.io/api/middleware/cors
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-		AllowHeaders:     "Accept,Authorization,Content-Type",
-		AllowCredentials: false, // credentials require explicit origins
-		MaxAge:           300,
-	}))
+	app.Use(cors.New(config.FiberCorsConfig))
 
 	// Cache (I'm only adding one header here)
 	// see middleware Cache for an alternative at https://docs.gofiber.io/api/middleware/cache
@@ -34,11 +27,7 @@ func SetupRoutes(app *fiber.App) {
 	})
 
 	// Static
-	// https://docs.gofiber.io/api/app
-	app.Static("/", "./public", fiber.Static{
-		Index:         "index.html", // sets the file name to serve from "/"
-		CacheDuration: -1,           // negative value disables cache, default is 10 * time.Second
-	})
+	app.Static("/", "./public", config.FiberStaticConfig)
 
 	// Health check
 	app.Get("/health", handler.HealthCheck)
@@ -64,6 +53,6 @@ func SetupRoutes(app *fiber.App) {
 	something.Post("/", middleware.Protected(), handler.CreateSomething)
 	something.Delete("/:id", middleware.Protected(), handler.DeleteSomething)
 
-	// "/api/v2" Routes:
-	//   put your v2 routes here
+	// // "/api/v2" Routes:
+	// //   put your v2 routes here
 }

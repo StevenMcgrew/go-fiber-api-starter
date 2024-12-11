@@ -4,6 +4,8 @@ import (
 	"strconv"
 
 	"go-fiber-api-starter/internal/database"
+	"go-fiber-api-starter/internal/enums/userstatus"
+	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/model"
 	"go-fiber-api-starter/internal/validation"
 
@@ -63,8 +65,8 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Set missing data
-	user.Type = "user"
-	user.Status = "unverified"
+	user.Type = usertype.REGULAR
+	user.Status = userstatus.UNVERIFIED
 
 	// Validate user
 	if err := validation.ValidateUser(user); err != nil {

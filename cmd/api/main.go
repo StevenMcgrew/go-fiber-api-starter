@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"go-fiber-api-starter/internal/database"
 	"go-fiber-api-starter/internal/router"
@@ -23,5 +24,5 @@ func main() {
 	database.ConnectDB()
 	router.SetupRoutes(app)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 }
