@@ -61,16 +61,16 @@ func CreateUser(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing body. Review the API docs.", "data": err})
 	}
 
 	// Set missing data
-	user.Type = usertype.REGULAR
-	user.Status = userstatus.UNVERIFIED
+	user.UserType = usertype.REGULAR
+	user.UserStatus = userstatus.UNVERIFIED
 
 	// Validate user
-	if err := validation.ValidateUser(user); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": err})
+	if errMessages := validation.ValidateUser(user); errMessages != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": errMessages})
 	}
 
 	// Check if email is already taken
@@ -86,6 +86,9 @@ func CreateUser(c *fiber.Ctx) error {
 	// Create URL link for email verification
 
 	// Send verification email with link
+
+	// Hide or remove some fields
+	// user.Password = "encrypted"
 
 	// Respond with 201 and user data
 
