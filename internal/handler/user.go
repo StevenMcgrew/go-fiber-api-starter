@@ -7,6 +7,7 @@ import (
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/model"
+	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
@@ -67,6 +68,9 @@ func CreateUser(c *fiber.Ctx) error {
 	// Set missing data
 	user.UserType = usertype.REGULAR
 	user.UserStatus = userstatus.UNVERIFIED
+	emptyStr := ""
+	ptrEmptyStr := &emptyStr
+	user.ImageURL = ptrEmptyStr
 
 	// Validate user
 	if errMessages := validation.ValidateUser(user); errMessages != nil {
@@ -102,7 +106,8 @@ func CreateUser(c *fiber.Ctx) error {
 	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
 	// }
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": *user})
+	newUser := serialization.SerializeUser(user)
+	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
 }
 
 // UpdateUser update user
