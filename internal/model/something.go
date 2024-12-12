@@ -1,7 +1,11 @@
 package model
 
+import "time"
+
 type Something struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	UserID      uint   `json:"userId"`
+	Id          uint      `json:"id"`
+	Description string    `json:"description"`
+	UserId      uint      `json:"userId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
