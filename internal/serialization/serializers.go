@@ -15,9 +15,9 @@ type SerializedUser struct {
 func SerializeUser(user *model.User) SerializedUser {
 	return SerializedUser{
 		Email:      user.Email,
-		Username:   user.Username,
+		Username:   user.UserName,
 		UserType:   user.UserType,
 		UserStatus: user.UserStatus,
-		ImageURL:   *user.ImageURL,
+		ImageURL:   user.ImageUrl,
 	}
 }
