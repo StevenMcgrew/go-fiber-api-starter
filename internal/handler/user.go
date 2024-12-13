@@ -54,16 +54,15 @@ func GetUser(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
-	userSignup := &model.UserSignup{}
 
 	// Parse
+	userSignup := &model.UserSignup{}
 	if err := c.BodyParser(userSignup); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err})
 	}
 
 	// Validate
-	warnings := validation.ValidateUserSignup(userSignup)
-	if warnings != nil {
+	if warnings := validation.ValidateUserSignup(userSignup); warnings != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": warnings})
 	}
 
