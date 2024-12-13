@@ -3,10 +3,8 @@ package handler
 import (
 	"strconv"
 
-	"go-fiber-api-starter/internal/enums/userstatus"
-	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/model"
-	"go-fiber-api-starter/internal/serialization"
+	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -56,29 +54,29 @@ func GetUser(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
+	userSignup := &model.UserSignup{}
 
-	user := &model.User{}
-
-	// Parse body
-	if err := c.BodyParser(user); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing body. Review the API docs.", "data": err})
+	// Parse
+	if err := c.BodyParser(userSignup); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err})
 	}
 
-	// Set missing data
-	user.UserType = usertype.REGULAR
-	user.UserStatus = userstatus.UNVERIFIED
-	user.ImageUrl = ""
-
-	// Validate user
-	// if errMessages := validation.ValidateUser(user); errMessages != nil {
-	// 	return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": errMessages})
-	// }
+	// Validate
+	warnings := validation.ValidateUserSignup(userSignup)
+	if warnings != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": warnings})
+	}
 
 	// Check if email is already taken
 
 	// Check if username is already taken
 
 	// Hash password
+
+	// Set missing data
+	// user.UserType = usertype.REGULAR
+	// user.UserStatus = userstatus.UNVERIFIED
+	// user.ImageUrl = ""
 
 	// Save user to database
 
@@ -103,8 +101,8 @@ func CreateUser(c *fiber.Ctx) error {
 	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
 	// }
 
-	newUser := serialization.SerializeUser(user)
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
+	// newUser := serialization.SerializeUser(user)
+	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": userSignup})
 }
 
 // UpdateUser update user
