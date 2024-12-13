@@ -1,7 +1,7 @@
 package serialization
 
 import (
-	"go-fiber-api-starter/internal/model"
+	"go-fiber-api-starter/internal/models"
 )
 
 type SerializedUser struct {
@@ -12,7 +12,7 @@ type SerializedUser struct {
 	ImageURL   string `json:"imageURL"`
 }
 
-func SerializeUser(user *model.User) SerializedUser {
+func SerializeUser(user *models.User) SerializedUser {
 	return SerializedUser{
 		Email:      user.Email,
 		Username:   user.UserName,

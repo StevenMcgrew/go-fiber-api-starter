@@ -1,4 +1,4 @@
-package model
+package models
 
 type UserSignup struct {
 	Email          string `json:"email" form:"email"`

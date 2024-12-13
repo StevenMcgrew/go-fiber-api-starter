@@ -1,10 +1,10 @@
 package validation
 
 import (
-	"go-fiber-api-starter/internal/model"
+	"go-fiber-api-starter/internal/models"
 )
 
-func ValidateUserSignup(u *model.UserSignup) []string {
+func ValidateUserSignup(u *models.UserSignup) []string {
 	m := make([]string, 0, 4)
 	if !isEmailValid(u.Email) {
 		m = append(m, "Email is invalid")

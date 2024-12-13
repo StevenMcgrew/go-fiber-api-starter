@@ -1,9 +1,9 @@
-package handler
+package handlers
 
 import (
 	"strconv"
 
-	"go-fiber-api-starter/internal/model"
+	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
@@ -56,7 +56,7 @@ func GetUser(c *fiber.Ctx) error {
 func CreateUser(c *fiber.Ctx) error {
 
 	// Parse
-	userSignup := &model.UserSignup{}
+	userSignup := &models.UserSignup{}
 	if err := c.BodyParser(userSignup); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err})
 	}

@@ -2,7 +2,7 @@ package router
 
 import (
 	"go-fiber-api-starter/internal/config"
-	"go-fiber-api-starter/internal/handler"
+	"go-fiber-api-starter/internal/handlers"
 	"go-fiber-api-starter/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -30,7 +30,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Static("/", "./public", config.FiberStaticConfig)
 
 	// Health check
-	app.Get("/health", handler.HealthCheck)
+	app.Get("/health", handlers.HealthCheck)
 
 	// Initial grouping of API and version route paths
 	api := app.Group("/api", logger.New())
@@ -39,19 +39,19 @@ func SetupRoutes(app *fiber.App) {
 
 	// "/api/v1" Routes:
 	auth := v1.Group("/auth")
-	auth.Post("/login", handler.Login)
+	auth.Post("/login", handlers.Login)
 
 	user := v1.Group("/user")
-	user.Get("/:id", handler.GetUser)
-	user.Post("/", handler.CreateUser)
-	user.Patch("/:id", middleware.Protected(), handler.UpdateUser)
-	user.Delete("/:id", middleware.Protected(), handler.DeleteUser)
+	user.Get("/:id", handlers.GetUser)
+	user.Post("/", handlers.CreateUser)
+	user.Patch("/:id", middleware.Protected(), handlers.UpdateUser)
+	user.Delete("/:id", middleware.Protected(), handlers.DeleteUser)
 
 	something := v1.Group("/something")
-	something.Get("/", handler.GetAllSomethings)
-	something.Get("/:id", handler.GetSomething)
-	something.Post("/", middleware.Protected(), handler.CreateSomething)
-	something.Delete("/:id", middleware.Protected(), handler.DeleteSomething)
+	something.Get("/", handlers.GetAllSomethings)
+	something.Get("/:id", handlers.GetSomething)
+	something.Post("/", middleware.Protected(), handlers.CreateSomething)
+	something.Delete("/:id", middleware.Protected(), handlers.DeleteSomething)
 
 	// // "/api/v2" Routes:
 	// //   put your v2 routes here
