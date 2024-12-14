@@ -3,11 +3,13 @@ package handlers
 import (
 	"strconv"
 
+	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -67,6 +69,15 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
+	rows, uErr := db.Query("SELECT * FROM users WHERE email = @email LIMIT 1;",
+		pgx.NamedArgs{"email": userSignup.Email},
+		&models.User{})
+	if uErr != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": uErr})
+	}
+	if len(rows) > 0 {
+		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "Email address is already in use by another user", "data": userSignup.Email})
+	}
 
 	// Check if username is already taken
 

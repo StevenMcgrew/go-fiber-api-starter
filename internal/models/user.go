@@ -13,3 +13,8 @@ type User struct {
 	CreatedAt  time.Time `json:"createdAt" form:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt" form:"updatedAt"`
 }
+
+type UserSignup struct {
+	User
+	PasswordRepeat string `json:"passwordRepeat" form:"passwordRepeat"`
+}

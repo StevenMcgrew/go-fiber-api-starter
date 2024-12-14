@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"context"
@@ -15,18 +15,18 @@ var (
 	Ctx  context.Context = context.Background()
 )
 
-func ConnectDB() {
-
+func Connect(connString string) {
 	var err error
-	Pool, err = pgxpool.New(Ctx, os.Getenv("DB_URL"))
+	Pool, err = pgxpool.New(Ctx, connString)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("Connection pool created for the database.")
+}
 
-	// Create database tables, etc., if not exists
-	path, pathErr := filepath.Abs("./internal/database/create-db.sql")
+func ExecuteSqlFile(path string) {
+	path, pathErr := filepath.Abs(path)
 	if pathErr != nil {
 		log.Fatal("Error getting absolute path to sql file:", pathErr)
 	}

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"go-fiber-api-starter/internal/database"
+	"go-fiber-api-starter/internal/db"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,7 +21,7 @@ func HealthCheck(c *fiber.Ctx) error {
 	stats := make(map[string]string)
 
 	// Ping the database
-	err := database.Pool.Ping(ctx)
+	err := db.Pool.Ping(ctx)
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("Database is down: %v", err)
@@ -34,7 +34,7 @@ func HealthCheck(c *fiber.Ctx) error {
 	stats["message"] = "It's healthy"
 
 	// Get database stats
-	s := database.Pool.Stat()
+	s := db.Pool.Stat()
 	totalConns := s.TotalConns()
 	waitCount := s.EmptyAcquireCount()
 	maxIdleDestroyCount := s.MaxIdleDestroyCount()

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"go-fiber-api-starter/internal/database"
+	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/router"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,8 +20,8 @@ func main() {
 	}
 
 	app := fiber.New()
-
-	database.ConnectDB()
+	db.Connect(os.Getenv("DB_URL"))
+	db.ExecuteSqlFile("./internal/db/create-db.sql")
 	router.SetupRoutes(app)
 
 	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
