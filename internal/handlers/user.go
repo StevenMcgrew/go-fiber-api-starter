@@ -9,7 +9,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -60,7 +59,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// Parse
 	userSignup := &models.UserSignup{}
 	if err := c.BodyParser(userSignup); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err.Error()})
 	}
 
 	// Validate
@@ -69,17 +68,22 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
-	rows, uErr := db.Query("SELECT * FROM users WHERE email = @email LIMIT 1;",
-		pgx.NamedArgs{"email": userSignup.Email},
-		&models.User{})
-	if uErr != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": uErr})
+	rowsByEmail, err := db.GetUserByEmail(userSignup.Email)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": err.Error()})
 	}
-	if len(rows) > 0 {
+	if len(rowsByEmail) > 0 {
 		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "Email address is already in use by another user", "data": userSignup.Email})
 	}
 
 	// Check if username is already taken
+	rowsByUserName, err := db.GetUserByUserName(userSignup.UserName)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on userName lookup", "data": err.Error()})
+	}
+	if len(rowsByUserName) > 0 {
+		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "UserName is already in use by another user", "data": userSignup.UserName})
+	}
 
 	// Hash password
 
