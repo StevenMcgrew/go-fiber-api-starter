@@ -13,30 +13,6 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// func getUserByEmail(e string) (*model.User, error) {
-// 	db := database.Pool
-// 	var user model.User
-// 	if err := db.Where(&model.User{Email: e}).First(&user).Error; err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
-
-// func getUserByUsername(u string) (*model.User, error) {
-// 	db := database.Pool
-// 	var user model.User
-// 	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
-
 func isEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil

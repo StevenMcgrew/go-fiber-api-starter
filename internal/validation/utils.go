@@ -33,8 +33,9 @@ func isUserNameValid(userName string) bool {
 }
 
 func isPasswordValid(password string) bool {
-	runeCount := utf8.RuneCountInString(password)
-	if runeCount < 8 || runeCount > 128 {
+	bytes := []byte(password)
+	length := len(bytes)
+	if length < 8 || length > 72 { // bcrypt does not accept passwords longer than 72 bytes
 		return false
 	}
 	return true

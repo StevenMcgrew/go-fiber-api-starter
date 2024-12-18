@@ -36,3 +36,12 @@ func GetUserByUserName(userName string) ([]models.User, error) {
 		&models.User{})
 	return rows, err
 }
+func InsertUser(user *models.User) ([]models.User, error) {
+	rows, err := Query(`INSERT INTO users (email, username, password, user_type, user_status, image_url)
+						VALUES (@email, @userName, @password, @userType, @userStatus, @imageUrl)
+						RETURNING *;`,
+		pgx.NamedArgs{"email": user.Email, "userName": user.UserName, "password": user.Password,
+			"userType": user.UserType, "userStatus": user.UserStatus, "imageUrl": user.ImageUrl},
+		&models.User{})
+	return rows, err
+}

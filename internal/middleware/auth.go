@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"os"
+	"go-fiber-api-starter/internal/config"
 
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
@@ -9,10 +9,7 @@ import (
 
 // Protected protect routes
 func Protected() fiber.Handler {
-	return jwtware.New(jwtware.Config{
-		SigningKey:   jwtware.SigningKey{Key: []byte(os.Getenv("SECRET"))},
-		ErrorHandler: jwtError,
-	})
+	return jwtware.New(config.FiberJwtConfig)
 }
 
 func jwtError(c *fiber.Ctx, err error) error {

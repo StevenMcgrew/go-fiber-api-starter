@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"os"
 	"strconv"
 
 	"go-fiber-api-starter/internal/db"
+	"go-fiber-api-starter/internal/enums/userstatus"
+	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/validation"
 
@@ -12,9 +15,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+func GetUser(c *fiber.Ctx) error {
+	return nil
 }
 
 func validToken(t *jwt.Token, id string) bool {
@@ -40,18 +42,6 @@ func validUser(id string, p string) bool {
 	// 	return false
 	// }
 	return true
-}
-
-func GetUser(c *fiber.Ctx) error {
-	// id := c.Params("id")
-	// db := database.Conn
-	// var user model.User
-	// db.Find(&user, id)
-	// if user.Username == "" {
-	// 	return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No user found with ID", "data": nil})
-	// }
-	// return c.JSON(fiber.Map{"status": "success", "message": "User found", "data": user})
-	return nil
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -86,15 +76,36 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Hash password
+	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(userSignup.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password", "data": err.Error()})
+	}
 
-	// Set missing data
-	// user.UserType = usertype.REGULAR
-	// user.UserStatus = userstatus.UNVERIFIED
-	// user.ImageUrl = ""
+	// Create new user
+	user := &models.User{}
+	user.Email = userSignup.Email
+	user.UserName = userSignup.UserName
+	user.Password = string(pwdBytes)
+	user.UserType = usertype.REGULAR
+	user.UserStatus = userstatus.UNVERIFIED
+	user.ImageUrl = ""
 
 	// Save user to database
+	userRows, err := db.InsertUser(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving user", "data": err.Error()})
+	}
+	if len(userRows) < 0 {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database insert", "data": userRows})
+	}
 
-	// Create JWT for email verification
+	// Create JWT for verification link in email
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userId":     userRows[0].Id,
+		"userType":   userRows[0].UserType,
+		"userStatus": userRows[0].UserStatus,
+	})
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
 
 	// Create URL link for email verification
 

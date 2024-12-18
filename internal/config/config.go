@@ -5,9 +5,11 @@ import (
 	"strings"
 	"time"
 
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Fiber Logger config options: https://docs.gofiber.io/api/middleware/logger
@@ -52,4 +54,19 @@ var FiberStaticConfig = fiber.Static{
 	MaxAge:         0,
 	ModifyResponse: nil,
 	Next:           nil,
+}
+
+// Fiber JWT config options: https://docs.gofiber.io/contrib/jwt_v1.x.x/jwt/#config
+var FiberJwtConfig = jwtware.Config{
+	Filter:         nil,
+	SuccessHandler: nil,
+	ErrorHandler:   nil,
+	SigningKey:     jwtware.SigningKey{Key: []byte(os.Getenv("SECRET"))},
+	SigningKeys:    nil,
+	ContextKey:     "payload",
+	Claims:         jwt.MapClaims{},
+	TokenLookup:    "header:Authorization",
+	AuthScheme:     "Bearer",
+	KeyFunc:        nil,
+	JWKSetURLs:     nil,
 }
