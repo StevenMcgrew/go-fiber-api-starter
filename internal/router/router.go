@@ -41,13 +41,13 @@ func SetupRoutes(app *fiber.App) {
 	auth := v1.Group("/auth")
 	auth.Post("/login", handlers.Login)
 
-	user := v1.Group("/user")
+	user := v1.Group("/users")
 	user.Get("/:id", handlers.GetUser)
 	user.Post("/", handlers.CreateUser)
 	user.Patch("/:id", middleware.Protected(), handlers.UpdateUser)
 	user.Delete("/:id", middleware.Protected(), handlers.DeleteUser)
 
-	something := v1.Group("/something")
+	something := v1.Group("/somethings")
 	something.Get("/", handlers.GetAllSomethings)
 	something.Get("/:id", handlers.GetSomething)
 	something.Post("/", middleware.Protected(), handlers.CreateSomething)

@@ -7,6 +7,7 @@ import (
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/enums/usertype"
+	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/validation"
 
@@ -82,52 +83,47 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Create new user
-	user := &models.User{}
-	user.Email = userSignup.Email
-	user.UserName = userSignup.UserName
-	user.Password = string(pwdBytes)
-	user.UserType = usertype.REGULAR
-	user.UserStatus = userstatus.UNVERIFIED
-	user.ImageUrl = ""
+	u := &models.User{}
+	u.Email = userSignup.Email
+	u.UserName = userSignup.UserName
+	u.Password = string(pwdBytes)
+	u.UserType = usertype.REGULAR
+	u.UserStatus = userstatus.UNVERIFIED
+	u.ImageUrl = ""
 
 	// Save user to database
-	userRows, err := db.InsertUser(user)
+	userRows, err := db.InsertUser(u)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving user", "data": err.Error()})
 	}
-	if len(userRows) < 0 {
+	if len(userRows) == 0 {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database insert", "data": userRows})
 	}
+	user := userRows[0]
 
-	// Create JWT for verification link in email
+	// Create JWT verification link for email verification
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userId":     userRows[0].Id,
-		"userType":   userRows[0].UserType,
-		"userStatus": userRows[0].UserStatus,
+		"userId":     user.Id,
+		"userType":   user.UserType,
+		"userStatus": user.UserStatus,
 	})
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
-
-	// Create URL link for email verification
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating token for email verification link", "data": err.Error()})
+	}
+	verificationLink := os.Getenv("API_BASE_URL") + "/api/v1/users/verify/" + tokenString
 
 	// Send verification email with link
+	err = mail.SendEmailVerification(user.Email, verificationLink)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification", "data": err.Error()})
+	}
 
-	// Hide or remove some fields
-	// user.Password = "encrypted"
+	// Hide password field
+	user.Password = "********"
 
 	// Respond with 201 and user data
-
-	// hash, err := hashPassword(user.Password)
-	// if err != nil {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't hash password", "data": err})
-	// }
-
-	// user.Password = hash
-	// if err := database.DB.Create(&user).Error; err != nil {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't create user", "data": err})
-	// }
-
-	// newUser := serialization.SerializeUser(user)
-	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": userSignup})
+	return c.Status(201).JSON(fiber.Map{"status": "success", "message": "Successfully saved new user", "data": user})
 }
 
 // UpdateUser update user
