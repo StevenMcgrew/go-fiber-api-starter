@@ -2,20 +2,21 @@ package validation
 
 import (
 	"go-fiber-api-starter/internal/models"
+	"go-fiber-api-starter/internal/utils"
 )
 
 func ValidateUserSignup(u *models.UserSignup) []string {
 	m := make([]string, 0, 4)
-	if !isEmailValid(u.Email) {
+	if !utils.IsEmailValid(u.Email) {
 		m = append(m, "Email is invalid")
 	}
-	if !isUserNameValid(u.UserName) {
+	if !utils.IsUserNameValid(u.UserName) {
 		m = append(m, "UserName is invalid")
 	}
-	if !isPasswordValid(u.Password) {
+	if !utils.IsPasswordValid(u.Password) {
 		m = append(m, "Password is invalid")
 	}
-	if !doesPasswordRepeatMatch(u.Password, u.PasswordRepeat) {
+	if !utils.DoesPasswordRepeatMatch(u.Password, u.PasswordRepeat) {
 		m = append(m, "PasswordRepeat does not match Password")
 	}
 	if len(m) > 0 {

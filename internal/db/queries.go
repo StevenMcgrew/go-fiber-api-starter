@@ -45,3 +45,10 @@ func InsertUser(user *models.User) ([]models.User, error) {
 		&models.User{})
 	return rows, err
 }
+
+func UpdateUserStatus(userId uint, userStatus string) ([]models.User, error) {
+	rows, err := Query(`UPDATE users SET user_status = @userStatus WHERE id = @userId RETURNING *;`,
+		pgx.NamedArgs{"userStatus": userStatus, "userId": userId},
+		&models.User{})
+	return rows, err
+}

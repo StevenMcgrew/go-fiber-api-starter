@@ -7,12 +7,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Protected protect routes
-func Protected() fiber.Handler {
+// Authn protect routes
+func Authn() fiber.Handler {
 	return jwtware.New(config.FiberJwtConfig)
 }
 
-func jwtError(c *fiber.Ctx, err error) error {
+func JwtError(c *fiber.Ctx, err error) error {
 	if err.Error() == "Missing or malformed JWT" {
 		return c.Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})

@@ -42,16 +42,17 @@ func SetupRoutes(app *fiber.App) {
 	auth.Post("/login", handlers.Login)
 
 	user := v1.Group("/users")
-	user.Get("/:id", handlers.GetUser)
 	user.Post("/", handlers.CreateUser)
-	user.Patch("/:id", middleware.Protected(), handlers.UpdateUser)
-	user.Delete("/:id", middleware.Protected(), handlers.DeleteUser)
+	user.Get("verify/:token", handlers.VerifyEmail)
+	user.Get("/:id", handlers.GetUser)
+	user.Patch("/:id", middleware.Authn(), handlers.UpdateUser)
+	user.Delete("/:id", middleware.Authn(), handlers.DeleteUser)
 
 	something := v1.Group("/somethings")
 	something.Get("/", handlers.GetAllSomethings)
 	something.Get("/:id", handlers.GetSomething)
-	something.Post("/", middleware.Protected(), handlers.CreateSomething)
-	something.Delete("/:id", middleware.Protected(), handlers.DeleteSomething)
+	something.Post("/", middleware.Authn(), handlers.CreateSomething)
+	something.Delete("/:id", middleware.Authn(), handlers.DeleteSomething)
 
 	// // "/api/v2" Routes:
 	// //   put your v2 routes here

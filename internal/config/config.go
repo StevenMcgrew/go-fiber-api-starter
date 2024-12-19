@@ -60,13 +60,20 @@ var FiberStaticConfig = fiber.Static{
 var FiberJwtConfig = jwtware.Config{
 	Filter:         nil,
 	SuccessHandler: nil,
-	ErrorHandler:   nil,
-	SigningKey:     jwtware.SigningKey{Key: []byte(os.Getenv("SECRET"))},
-	SigningKeys:    nil,
-	ContextKey:     "payload",
-	Claims:         jwt.MapClaims{},
-	TokenLookup:    "header:Authorization",
-	AuthScheme:     "Bearer",
-	KeyFunc:        nil,
-	JWKSetURLs:     nil,
+	ErrorHandler: func(c *fiber.Ctx, err error) error {
+		if err.Error() == "Missing or malformed JWT" {
+			return c.Status(fiber.StatusBadRequest).
+				JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})
+		}
+		return c.Status(fiber.StatusUnauthorized).
+			JSON(fiber.Map{"status": "error", "message": "Invalid or expired JWT", "data": nil})
+	},
+	SigningKey:  jwtware.SigningKey{Key: []byte(os.Getenv("SECRET"))},
+	SigningKeys: nil,
+	ContextKey:  "payload",
+	Claims:      jwt.MapClaims{},
+	TokenLookup: "header:Authorization",
+	AuthScheme:  "Bearer",
+	KeyFunc:     nil,
+	JWKSetURLs:  nil,
 }
