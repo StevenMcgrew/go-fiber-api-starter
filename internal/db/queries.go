@@ -23,6 +23,13 @@ func Query[T any](sql string, args pgx.NamedArgs, ptrModel *T) ([]T, error) {
 	return parsedRows, nil
 }
 
+func GetUserById(id uint) ([]models.User, error) {
+	rows, err := Query("SELECT * FROM users WHERE id = @id LIMIT 1;",
+		pgx.NamedArgs{"id": id},
+		&models.User{})
+	return rows, err
+}
+
 func GetUserByEmail(email string) ([]models.User, error) {
 	rows, err := Query("SELECT * FROM users WHERE email = @email LIMIT 1;",
 		pgx.NamedArgs{"email": email},
@@ -46,9 +53,23 @@ func InsertUser(user *models.User) ([]models.User, error) {
 	return rows, err
 }
 
-func UpdateUserStatus(userId uint, userStatus string) ([]models.User, error) {
-	rows, err := Query(`UPDATE users SET user_status = @userStatus WHERE id = @userId RETURNING *;`,
-		pgx.NamedArgs{"userStatus": userStatus, "userId": userId},
+func UpdateUser(user *models.User) ([]models.User, error) {
+	rows, err := Query(`UPDATE users
+						SET email = @email,
+							username = @userName,
+							password = @password,
+							user_type = @userType,
+							user_status = @userStatus,
+							image_url = @imageUrl
+						WHERE id = @userId RETURNING *;`,
+		pgx.NamedArgs{
+			"userId":     user.Id,
+			"email":      user.Email,
+			"userName":   user.UserName,
+			"password":   user.Password,
+			"userType":   user.UserType,
+			"userStatus": user.UserStatus,
+			"imageUrl":   user.ImageUrl},
 		&models.User{})
 	return rows, err
 }

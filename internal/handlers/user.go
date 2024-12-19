@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"fmt"
 	"os"
-	"strconv"
 
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
@@ -20,31 +20,6 @@ import (
 
 func GetUser(c *fiber.Ctx) error {
 	return nil
-}
-
-func validToken(t *jwt.Token, id string) bool {
-	n, err := strconv.Atoi(id)
-	if err != nil {
-		return false
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	uid := int(claims["user_id"].(float64))
-
-	return uid == n
-}
-
-func validUser(id string, p string) bool {
-	// db := database.Conn
-	// var user model.User
-	// db.First(&user, id)
-	// if user.Username == "" {
-	// 	return false
-	// }
-	// if !CheckPasswordHash(p, user.Password) {
-	// 	return false
-	// }
-	return true
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -124,44 +99,57 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func VerifyEmail(c *fiber.Ctx) error {
-	// Get tokenString from /api/v1/users/verify/:token
+	fmt.Println("*********HERE***********")
+	// Get tokenString from path /api/v1/users/verify/:token
 	tokenString := c.Params("token")
 	if tokenString == "" {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Token parameter is missing from url path", "data": map[string]interface{}{"token": tokenString}})
 	}
 
-	// Parse/Verify the token https://pkg.go.dev/github.com/golang-jwt/jwt/v5#example-Parse-ErrorChecking
+	// Parse/Verify the token
 	token, err := utils.ParseAndVerifyJWT(tokenString)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "JWT verification error", "data": err.Error()})
 	}
 
-	// Get data out of JWT claims
+	// Get userId out of JWT claims
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error extracting claims from JWT", "data": ""})
 	}
-	userId, ok := (claims[jwtclaimkeys.USER_ID]).(uint)
+	id, ok := claims[jwtclaimkeys.USER_ID].(float64)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user id from JWT claims", "data": ""})
 	}
-	userStatus, ok := claims[jwtclaimkeys.USER_STATUS].(string)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user status from JWT claims", "data": ""})
+	userId := uint(id)
+
+	// Get user
+	userRows, err := db.GetUserById(userId)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database", "data": err.Error()})
+	}
+	if len(userRows) == 0 {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not found in database", "data": userRows})
+	}
+	user := userRows[0]
+
+	// Make sure user's current status is "unverified" before continuing
+	if user.UserStatus != userstatus.UNVERIFIED {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified.", "data": ""})
 	}
 
 	// Update userStatus to "active"
-	userRows, err := db.UpdateUserStatus(userId, userStatus)
+	user.UserStatus = userstatus.ACTIVE
+	userRows, err = db.UpdateUser(&user)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user", "data": err.Error()})
 	}
 	if len(userRows) == 0 {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database update", "data": userRows})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database update. However, it is likely that the user was still updated.", "data": userRows})
 	}
 
 	// Redirect to success webpage
-
-	return nil
+	return c.Redirect("/email-verification-success.html")
 }
 
 // UpdateUser update user

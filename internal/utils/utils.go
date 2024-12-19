@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/models"
@@ -22,27 +21,15 @@ func CreateUserJWT(user *models.User) (string, error) {
 }
 
 func ParseAndVerifyJWT(tokenString string) (*jwt.Token, error) {
+	// https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("incorrect signing method detected for JWT: %v", token.Header["alg"])
-		}
 		return []byte(os.Getenv("SECRET")), nil
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
-	switch {
-	case token.Valid:
-		return token, nil
-	case errors.Is(err, jwt.ErrTokenMalformed):
-		return nil, fmt.Errorf("malformed JWT: %v", err.Error())
-	case errors.Is(err, jwt.ErrTokenSignatureInvalid):
-		return nil, fmt.Errorf("JWT signature invalid: %v", err.Error())
-	case errors.Is(err, jwt.ErrTokenExpired):
-		return nil, fmt.Errorf("JWT has expired: %v", err.Error())
-	case errors.Is(err, jwt.ErrTokenNotValidYet):
-		return nil, fmt.Errorf("JWT is not valid yet: %v", err.Error())
-	default:
+	if !token.Valid {
 		return nil, fmt.Errorf("JWT error: %v", err.Error())
 	}
+	return token, nil
 }
 
 func IsAlphanumeric(str string) bool {
