@@ -20,6 +20,7 @@ func main() {
 	}
 
 	app := fiber.New()
+
 	db.Connect(os.Getenv("DB_URL"))
 	db.ExecuteSqlFile("./internal/db/create-db.sql")
 	router.SetupRoutes(app)

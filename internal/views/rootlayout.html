@@ -21,6 +21,10 @@
         </div>
     </header>
 
+    {{ block "content" . }}
+        this is a placeholder
+    {{ end }}
+
     <!-- Sign Up popover -->
     <div id="signupPopover" popover>
         <form id="signupForm" class="auth-form">

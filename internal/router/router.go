@@ -6,6 +6,7 @@ import (
 	"go-fiber-api-starter/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -28,6 +29,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// Static
 	app.Static("/", "./public", config.FiberStaticConfig)
+
+	// Home page
+	app.Get("/", adaptor.HTTPHandlerFunc(handlers.HomePage))
 
 	// Health check
 	app.Get("/health", handlers.HealthCheck)

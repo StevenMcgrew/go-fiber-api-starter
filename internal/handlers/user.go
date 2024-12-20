@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"os"
 
 	"go-fiber-api-starter/internal/db"
@@ -99,7 +98,6 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func VerifyEmail(c *fiber.Ctx) error {
-	fmt.Println("*********HERE***********")
 	// Get tokenString from path /api/v1/users/verify/:token
 	tokenString := c.Params("token")
 	if tokenString == "" {
