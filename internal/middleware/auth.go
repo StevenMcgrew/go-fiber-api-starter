@@ -1,22 +1,18 @@
 package middleware
 
 import (
-	"go-fiber-api-starter/internal/config"
-
-	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 )
 
-// Authn protect routes
+// Authenticate
 func Authn() fiber.Handler {
-	return jwtware.New(config.FiberJwtConfig)
+	a := func(c *fiber.Ctx) error {
+		return nil
+	}
+	return a
 }
 
-func JwtError(c *fiber.Ctx, err error) error {
-	if err.Error() == "Missing or malformed JWT" {
-		return c.Status(fiber.StatusBadRequest).
-			JSON(fiber.Map{"status": "error", "message": "Missing or malformed JWT", "data": nil})
-	}
-	return c.Status(fiber.StatusUnauthorized).
-		JSON(fiber.Map{"status": "error", "message": "Invalid or expired JWT", "data": nil})
+// Authorize
+func Authz(c *fiber.Ctx) {
+	return
 }
