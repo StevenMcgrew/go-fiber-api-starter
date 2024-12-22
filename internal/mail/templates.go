@@ -12,8 +12,11 @@ var VerificationEmailTemplate = `
 </head>
 
 <body>
-    <p>Please click the following link to verify your email address:</p>
-    <a href="%s">%s</a>
+	<div style="text-align:center;">
+		<p>Welcome!</p>
+		<p>Here's your 6-digit code to verify your email address:</p>
+		<p style="color:dodgerblue;font-weight:bold;font-size:large;">%s</p>  
+	</div>
 </body>
 
 </html>

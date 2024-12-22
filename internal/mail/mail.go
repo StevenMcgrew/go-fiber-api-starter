@@ -34,9 +34,9 @@ func SendMail(to string, from string, subject string, body string) error {
 	return nil
 }
 
-func SendEmailVerification(to string, verificationLink string) error {
-	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Welcome",
-		fmt.Sprintf(VerificationEmailTemplate, verificationLink, verificationLink))
+func SendEmailCode(to string, code string) error {
+	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Welcome!",
+		fmt.Sprintf(VerificationEmailTemplate, code))
 	if err != nil {
 		return err
 	}

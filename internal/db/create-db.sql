@@ -4,19 +4,22 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    user_type TEXT NOT NULL,
-    user_status TEXT NOT NULL,
+    otp TEXT,
+    role TEXT NOT NULL,
+    status TEXT NOT NULL,
     image_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ
 );
 
-CREATE TABLE IF NOT EXISTS somethings (
+CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
     description TEXT NOT NULL,
     user_id INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    deleted_at TIMESTAMPTZ
 );
 
 
@@ -33,7 +36,7 @@ $$;
 
 -- TRIGGERS for TIMESTAMP
 CREATE OR REPLACE TRIGGER update_timestamp BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE OR REPLACE TRIGGER update_timestamp BEFORE UPDATE ON somethings FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE OR REPLACE TRIGGER update_timestamp BEFORE UPDATE ON items FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 -- FUNCTION to ADD CONSTRAINT IF NOT EXISTS (Postgresql doesn't have this built-in yet)
@@ -53,7 +56,7 @@ $$;
 
 
 -- FOREIGN KEY CONSTRAINTS
-SELECT add_constraint_if_not_exists('somethings', 'fk_somethings_users', 'FOREIGN KEY (user_id) REFERENCES users(id);');
+SELECT add_constraint_if_not_exists('items', 'fk_items_users', 'FOREIGN KEY (user_id) REFERENCES users(id);');
 
 
 -- INSERT FAKE USERS (all the passwords are '12345678', but they have been hashed by bcrypt)

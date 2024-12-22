@@ -5,12 +5,12 @@ import (
 	"go-fiber-api-starter/internal/utils"
 )
 
-func ValidateUserSignup(u *models.UserSignup) []string {
+func ValidateUserSignup(u *models.UserForSignUp) []string {
 	m := make([]string, 0, 4)
 	if !utils.IsEmailValid(u.Email) {
 		m = append(m, "Email is invalid")
 	}
-	if !utils.IsUserNameValid(u.UserName) {
+	if !utils.IsUserNameValid(u.Username) {
 		m = append(m, "UserName is invalid")
 	}
 	if !utils.IsPasswordValid(u.Password) {

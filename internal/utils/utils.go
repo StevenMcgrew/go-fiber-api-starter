@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/models"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,8 +16,8 @@ import (
 func CreateUserJWT(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		jwtclaimkeys.USER_ID:     user.Id,
-		jwtclaimkeys.USER_TYPE:   user.UserType,
-		jwtclaimkeys.USER_STATUS: user.UserStatus,
+		jwtclaimkeys.USER_TYPE:   user.Role,
+		jwtclaimkeys.USER_STATUS: user.Status,
 	})
 	return token.SignedString([]byte(os.Getenv("SECRET")))
 }
@@ -30,6 +32,11 @@ func ParseAndVerifyJWT(tokenString string) (*jwt.Token, error) {
 		return nil, fmt.Errorf("JWT error: %v", err.Error())
 	}
 	return token, nil
+}
+
+func RandomSixDigitStr() string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return fmt.Sprintf("%d", r.Intn(900000)+100000)
 }
 
 func IsAlphanumeric(str string) bool {

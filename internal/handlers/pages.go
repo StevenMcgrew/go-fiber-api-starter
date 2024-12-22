@@ -1,95 +1,55 @@
 package handlers
 
 import (
-	"encoding/json"
-	"errors"
 	"html/template"
-	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
+func HomePage(c *fiber.Ctx) error {
 	data := struct{ ShowLogin bool }{ShowLogin: true}
-	filenames := []string{"rootlayout", "header"}
-	renderAndSendHTML(w, data, filenames)
+	filenames := []string{"root-layout", "header"}
+	return renderAndSendHTML(c, data, filenames)
 }
 
-func AboutPage(c *fiber.Ctx) error {
+func EmailVerificationSuccessPage(c *fiber.Ctx) error {
+	data := struct{ ShowLogin bool }{ShowLogin: false}
+	filenames := []string{"root-layout", "header", "email-verification-success"}
+	return renderAndSendHTML(c, data, filenames)
+}
+
+func EmailVerificationFailurePage(c *fiber.Ctx) error {
+	data := struct{ ShowLogin bool }{ShowLogin: false}
+	filenames := []string{"root-layout", "header", "email-verification-failure"}
+	return renderAndSendHTML(c, data, filenames)
+}
+
+func renderAndSendHTML(c *fiber.Ctx, data any, filenames []string) error {
 	// Get views directory
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Server error when getting working directory: %v", err)
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting working directory", "data": err.Error()})
 	}
 	viewsDir := wd + "/internal/views"
-	// Paths
-	paths := []string{
-		filepath.Join(viewsDir, "rootlayout.html"),
-		filepath.Join(viewsDir, "header.html"),
-	}
-	// Parse
-	tmpl, err := template.ParseFiles(paths...)
-	if err != nil {
-		log.Fatalf("Server error when parsing files: %v", err)
-	}
-	if tmpl == nil {
-		log.Fatalf("Server error, tmpl is nil: %v", tmpl)
-	}
-
-	// Data
-	data := struct{ ShowLogin bool }{ShowLogin: true}
-	c.Set("Content-Type", "text/html")
-	return tmpl.Execute(c.Response().BodyWriter(), data)
-}
-
-func renderAndSendHTML(w http.ResponseWriter, data any, filenames []string) {
-	// Get views directory
-	wd, err := os.Getwd()
-	if err != nil {
-		sendRenderError(w, err, "Server error when getting working directory")
-		return
-	}
-	viewsDir := wd + "/internal/views"
-
 	// Get template file paths
 	paths := make([]string, 0, len(filenames))
 	for _, filename := range filenames {
 		paths = append(paths, filepath.Join(viewsDir, filename+".html"))
 	}
-
-	// Render
+	// Render and send
 	tmpl, err := template.ParseFiles(paths...)
 	if err != nil {
-		sendRenderError(w, err, "Server error while parsing HTML templates")
-		return
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error while parsing HTML templates", "data": err.Error()})
 	}
 	if tmpl == nil {
-		sendRenderError(w, errors.New(""), "Parsing html templates produced a nil template")
-		return
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Parsing html templates produced a nil template", "data": ""})
 	}
-	err = tmpl.Execute(w, data)
+	c.Set("Content-Type", "text/html")
+	err = tmpl.Execute(c.Response().BodyWriter(), data)
 	if err != nil {
-		sendRenderError(w, err, "Server error while rendering HTML templates")
-		return
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error while rendering HTML templates", "data": err.Error()})
 	}
-}
-
-func sendRenderError(w http.ResponseWriter, err error, message string) {
-	type Response struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-		Data    any    `json:"data"`
-	}
-	w.WriteHeader(http.StatusInternalServerError)
-	encodeErr := json.NewEncoder(w).Encode(Response{
-		Status:  "error",
-		Message: message,
-		Data:    err.Error()})
-	if encodeErr != nil {
-		http.Error(w, encodeErr.Error(), http.StatusInternalServerError)
-		return
-	}
+	return nil
 }

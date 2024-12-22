@@ -47,8 +47,8 @@ func InsertUser(user *models.User) ([]models.User, error) {
 	rows, err := Query(`INSERT INTO users (email, username, password, user_type, user_status, image_url)
 						VALUES (@email, @userName, @password, @userType, @userStatus, @imageUrl)
 						RETURNING *;`,
-		pgx.NamedArgs{"email": user.Email, "userName": user.UserName, "password": user.Password,
-			"userType": user.UserType, "userStatus": user.UserStatus, "imageUrl": user.ImageUrl},
+		pgx.NamedArgs{"email": user.Email, "userName": user.Username, "password": user.Password,
+			"userType": user.Role, "userStatus": user.Status, "imageUrl": user.ImageUrl},
 		&models.User{})
 	return rows, err
 }
@@ -65,10 +65,10 @@ func UpdateUser(user *models.User) ([]models.User, error) {
 		pgx.NamedArgs{
 			"userId":     user.Id,
 			"email":      user.Email,
-			"userName":   user.UserName,
+			"userName":   user.Username,
 			"password":   user.Password,
-			"userType":   user.UserType,
-			"userStatus": user.UserStatus,
+			"userType":   user.Role,
+			"userStatus": user.Status,
 			"imageUrl":   user.ImageUrl},
 		&models.User{})
 	return rows, err

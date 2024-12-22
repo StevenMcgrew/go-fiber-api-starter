@@ -4,20 +4,16 @@ import (
 	"go-fiber-api-starter/internal/models"
 )
 
-type SerializedUser struct {
-	Email      string `json:"email"`
-	Username   string `json:"username"`
-	UserType   string `json:"userType"`
-	UserStatus string `json:"userStatus"`
-	ImageURL   string `json:"imageURL"`
-}
-
-func SerializeUser(user *models.User) SerializedUser {
-	return SerializedUser{
-		Email:      user.Email,
-		Username:   user.UserName,
-		UserType:   user.UserType,
-		UserStatus: user.UserStatus,
-		ImageURL:   user.ImageUrl,
+func ToUserForResponse(user *models.User) *models.UserForResponse {
+	return &models.UserForResponse{
+		Id:        user.Id,
+		Email:     user.Email,
+		Username:  user.Username,
+		Role:      user.Role,
+		Status:    user.Status,
+		ImageUrl:  user.ImageUrl,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: user.DeletedAt,
 	}
 }

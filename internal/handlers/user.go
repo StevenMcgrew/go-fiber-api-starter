@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"os"
-
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
+	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
 
@@ -24,7 +23,7 @@ func GetUser(c *fiber.Ctx) error {
 func CreateUser(c *fiber.Ctx) error {
 
 	// Parse
-	userSignup := &models.UserSignup{}
+	userSignup := &models.UserForSignUp{}
 	if err := c.BodyParser(userSignup); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing signup data", "data": err.Error()})
 	}
@@ -44,12 +43,12 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if username is already taken
-	rowsByUserName, err := db.GetUserByUserName(userSignup.UserName)
+	rowsByUserName, err := db.GetUserByUserName(userSignup.Username)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on userName lookup", "data": err.Error()})
 	}
 	if len(rowsByUserName) > 0 {
-		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "UserName is already in use by another user", "data": userSignup.UserName})
+		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "UserName is already in use by another user", "data": userSignup.Username})
 	}
 
 	// Hash password
@@ -58,14 +57,17 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password", "data": err.Error()})
 	}
 
+	// Generate OTP
+	otp := utils.RandomSixDigitStr()
+
 	// Create new user
 	u := &models.User{}
 	u.Email = userSignup.Email
-	u.UserName = userSignup.UserName
+	u.Username = userSignup.Username
 	u.Password = string(pwdBytes)
-	u.UserType = usertype.REGULAR
-	u.UserStatus = userstatus.UNVERIFIED
-	u.ImageUrl = ""
+	u.OTP = otp
+	u.Role = usertype.REGULAR
+	u.Status = userstatus.UNVERIFIED
 
 	// Save user to database
 	userRows, err := db.InsertUser(u)
@@ -77,31 +79,32 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 	user := userRows[0]
 
-	// Create JWT verification link for email verification
-	tokenString, err := utils.CreateUserJWT(&user)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating token for email verification link", "data": err.Error()})
-	}
-	verificationLink := os.Getenv("API_BASE_URL") + "/api/v1/users/verify/" + tokenString
-
-	// Send verification email with link
-	err = mail.SendEmailVerification(user.Email, verificationLink)
+	// Email the OTP
+	err = mail.SendEmailCode(user.Email, otp)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification", "data": err.Error()})
 	}
 
-	// Hide password field
-	user.Password = "********"
+	// Serialize user
+	userForResponse := serialization.ToUserForResponse(&user)
 
 	// Respond with 201 and user data
-	return c.Status(201).JSON(fiber.Map{"status": "success", "message": "Successfully saved new user", "data": user})
+	return c.Status(201).JSON(fiber.Map{"status": "success", "message": "Successfully saved new user", "data": userForResponse})
 }
 
 func VerifyEmail(c *fiber.Ctx) error {
+	var heading string
+	var message string
+	var email string
+
 	// Get tokenString from path /api/v1/users/verify/:token
 	tokenString := c.Params("token")
 	if tokenString == "" {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Token parameter is missing from url path", "data": map[string]interface{}{"token": tokenString}})
+		c.Locals(heading, "&#x26A0; Invalid")
+		c.Locals(message, "Token parameter is missing from url path")
+		c.Locals(email, "")
+		return EmailVerificationFailurePage(c)
+		// return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Token parameter is missing from url path", "data": map[string]interface{}{"token": tokenString}})
 	}
 
 	// Parse/Verify the token
@@ -132,12 +135,12 @@ func VerifyEmail(c *fiber.Ctx) error {
 	user := userRows[0]
 
 	// Make sure user's current status is "unverified" before continuing
-	if user.UserStatus != userstatus.UNVERIFIED {
+	if user.Status != userstatus.UNVERIFIED {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified.", "data": ""})
 	}
 
 	// Update userStatus to "active"
-	user.UserStatus = userstatus.ACTIVE
+	user.Status = userstatus.ACTIVE
 	userRows, err = db.UpdateUser(&user)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user", "data": err.Error()})
@@ -147,7 +150,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	}
 
 	// Redirect to success webpage
-	return c.Redirect("/email-verification-success.html")
+	return c.Redirect("/email-verification-success")
 }
 
 // UpdateUser update user
