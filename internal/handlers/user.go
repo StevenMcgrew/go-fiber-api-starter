@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/enums/userstatus"
@@ -34,6 +35,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
+	fmt.Println("CreateUser, GetUserByEmail")
 	rowsByEmail, err := db.GetUserByEmail(userSignup.Email)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": err.Error()})
@@ -43,6 +45,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if username is already taken
+	fmt.Println("CreateUser, GetUserByUsername")
 	rowsByUserName, err := db.GetUserByUserName(userSignup.Username)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on userName lookup", "data": err.Error()})
@@ -70,6 +73,7 @@ func CreateUser(c *fiber.Ctx) error {
 	u.Status = userstatus.UNVERIFIED
 
 	// Save user to database
+	fmt.Println("CreateUser, InsertUser")
 	userRows, err := db.InsertUser(u)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving user", "data": err.Error()})

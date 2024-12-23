@@ -37,18 +37,18 @@ func GetUserByEmail(email string) ([]models.User, error) {
 	return rows, err
 }
 
-func GetUserByUserName(userName string) ([]models.User, error) {
-	rows, err := Query("SELECT * FROM users WHERE username = @userName LIMIT 1;",
-		pgx.NamedArgs{"userName": userName},
+func GetUserByUserName(username string) ([]models.User, error) {
+	rows, err := Query("SELECT * FROM users WHERE username = @username LIMIT 1;",
+		pgx.NamedArgs{"username": username},
 		&models.User{})
 	return rows, err
 }
 func InsertUser(user *models.User) ([]models.User, error) {
-	rows, err := Query(`INSERT INTO users (email, username, password, user_type, user_status, image_url)
-						VALUES (@email, @userName, @password, @userType, @userStatus, @imageUrl)
+	rows, err := Query(`INSERT INTO users (email, username, password, otp, role, status, image_url, deleted_at)
+						VALUES (@email, @username, @password, @otp, @role, @status, @imageUrl, @deletedAt)
 						RETURNING *;`,
-		pgx.NamedArgs{"email": user.Email, "userName": user.Username, "password": user.Password,
-			"userType": user.Role, "userStatus": user.Status, "imageUrl": user.ImageUrl},
+		pgx.NamedArgs{"email": user.Email, "username": user.Username, "password": user.Password, "otp": user.OTP,
+			"role": user.Role, "status": user.Status, "imageUrl": user.ImageUrl, "deletedAt": user.DeletedAt},
 		&models.User{})
 	return rows, err
 }
@@ -56,20 +56,24 @@ func InsertUser(user *models.User) ([]models.User, error) {
 func UpdateUser(user *models.User) ([]models.User, error) {
 	rows, err := Query(`UPDATE users
 						SET email = @email,
-							username = @userName,
+							username = @username,
 							password = @password,
-							user_type = @userType,
-							user_status = @userStatus,
-							image_url = @imageUrl
-						WHERE id = @userId RETURNING *;`,
+							otp = @otp,
+							role = @role,
+							status = @status,
+							image_url = @imageUrl,
+							deleted_at = @deletedAt
+						WHERE id = @id RETURNING *;`,
 		pgx.NamedArgs{
-			"userId":     user.Id,
-			"email":      user.Email,
-			"userName":   user.Username,
-			"password":   user.Password,
-			"userType":   user.Role,
-			"userStatus": user.Status,
-			"imageUrl":   user.ImageUrl},
+			"id":        user.Id,
+			"email":     user.Email,
+			"username":  user.Username,
+			"password":  user.Password,
+			"otp":       user.OTP,
+			"role":      user.Role,
+			"status":    user.Status,
+			"imageUrl":  user.ImageUrl,
+			"deletedAt": user.DeletedAt},
 		&models.User{})
 	return rows, err
 }
