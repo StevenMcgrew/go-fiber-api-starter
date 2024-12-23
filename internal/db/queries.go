@@ -1,60 +1,74 @@
 package db
 
 import (
-	"fmt"
 	"go-fiber-api-starter/internal/models"
 
 	"github.com/jackc/pgx/v5"
 )
 
-func Query[T any](sql string, args pgx.NamedArgs, ptrModel *T) ([]T, error) {
+func Many[T any](sql string, args pgx.NamedArgs, ptrModel *T) ([]T, error) {
 	// Run the query
 	rows, err := Pool.Query(Ctx, sql, args)
 	if err != nil {
-		fmt.Println("Error querying the database:", err)
 		return nil, err
 	}
 	// Parse the rows
 	parsedRows, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
 	if err != nil {
-		fmt.Println("Error parsing database rows:", err)
 		return nil, err
 	}
 	return parsedRows, nil
 }
 
-func GetUserById(id uint) ([]models.User, error) {
-	rows, err := Query("SELECT * FROM users WHERE id = @id LIMIT 1;",
+func One[T any](sql string, args pgx.NamedArgs, ptrModel *T) (T, error) {
+	// Run the query
+	rows, err := Pool.Query(Ctx, sql, args)
+	if err != nil {
+		return *ptrModel, err
+	}
+	// Parse the rows
+	parsedRows, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
+	if err != nil {
+		return *ptrModel, err
+	}
+	if len(parsedRows) == 0 {
+		return *ptrModel, pgx.ErrNoRows
+	}
+	return parsedRows[0], nil
+}
+
+func GetUserById(id uint) (models.User, error) {
+	row, err := One("SELECT * FROM users WHERE id = @id LIMIT 1;",
 		pgx.NamedArgs{"id": id},
 		&models.User{})
-	return rows, err
+	return row, err
 }
 
-func GetUserByEmail(email string) ([]models.User, error) {
-	rows, err := Query("SELECT * FROM users WHERE email = @email LIMIT 1;",
+func GetUserByEmail(email string) (models.User, error) {
+	row, err := One("SELECT * FROM users WHERE email = @email LIMIT 1;",
 		pgx.NamedArgs{"email": email},
 		&models.User{})
-	return rows, err
+	return row, err
 }
 
-func GetUserByUserName(username string) ([]models.User, error) {
-	rows, err := Query("SELECT * FROM users WHERE username = @username LIMIT 1;",
+func GetUserByUserName(username string) (models.User, error) {
+	row, err := One("SELECT * FROM users WHERE username = @username LIMIT 1;",
 		pgx.NamedArgs{"username": username},
 		&models.User{})
-	return rows, err
+	return row, err
 }
-func InsertUser(user *models.User) ([]models.User, error) {
-	rows, err := Query(`INSERT INTO users (email, username, password, otp, role, status, image_url, deleted_at)
+func InsertUser(user *models.User) (models.User, error) {
+	row, err := One(`INSERT INTO users (email, username, password, otp, role, status, image_url, deleted_at)
 						VALUES (@email, @username, @password, @otp, @role, @status, @imageUrl, @deletedAt)
 						RETURNING *;`,
 		pgx.NamedArgs{"email": user.Email, "username": user.Username, "password": user.Password, "otp": user.OTP,
 			"role": user.Role, "status": user.Status, "imageUrl": user.ImageUrl, "deletedAt": user.DeletedAt},
 		&models.User{})
-	return rows, err
+	return row, err
 }
 
-func UpdateUser(user *models.User) ([]models.User, error) {
-	rows, err := Query(`UPDATE users
+func UpdateUser(user *models.User) (models.User, error) {
+	row, err := One(`UPDATE users
 						SET email = @email,
 							username = @username,
 							password = @password,
@@ -75,5 +89,5 @@ func UpdateUser(user *models.User) ([]models.User, error) {
 			"imageUrl":  user.ImageUrl,
 			"deletedAt": user.DeletedAt},
 		&models.User{})
-	return rows, err
+	return row, err
 }

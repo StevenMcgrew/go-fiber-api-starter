@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/enums/userstatus"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -35,23 +35,23 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
-	fmt.Println("CreateUser, GetUserByEmail")
-	rowsByEmail, err := db.GetUserByEmail(userSignup.Email)
+	userByEmail, err := db.GetUserByEmail(userSignup.Email)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": err.Error()})
-	}
-	if len(rowsByEmail) > 0 {
-		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "Email address is already in use by another user", "data": userSignup.Email})
+		if err != pgx.ErrNoRows { // some error other than no rows
+			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on email lookup", "data": err.Error()})
+		}
+	} else { // user with this email address was found
+		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "Email address is already in use by another user", "data": userByEmail.Email})
 	}
 
 	// Check if username is already taken
-	fmt.Println("CreateUser, GetUserByUsername")
-	rowsByUserName, err := db.GetUserByUserName(userSignup.Username)
+	userByUsername, err := db.GetUserByUserName(userSignup.Username)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on userName lookup", "data": err.Error()})
-	}
-	if len(rowsByUserName) > 0 {
-		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "UserName is already in use by another user", "data": userSignup.Username})
+		if err != pgx.ErrNoRows { // some error other than no rows
+			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error on username lookup", "data": err.Error()})
+		}
+	} else { // user with this username was found
+		return c.Status(409).JSON(fiber.Map{"status": "fail", "message": "Username is already in use by another user", "data": userByUsername.Username})
 	}
 
 	// Hash password
@@ -60,31 +60,23 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password", "data": err.Error()})
 	}
 
-	// Generate OTP
-	otp := utils.RandomSixDigitStr()
-
 	// Create new user
 	u := &models.User{}
 	u.Email = userSignup.Email
 	u.Username = userSignup.Username
 	u.Password = string(pwdBytes)
-	u.OTP = otp
+	u.OTP = utils.RandomSixDigitStr()
 	u.Role = usertype.REGULAR
 	u.Status = userstatus.UNVERIFIED
 
 	// Save user to database
-	fmt.Println("CreateUser, InsertUser")
-	userRows, err := db.InsertUser(u)
+	user, err := db.InsertUser(u)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving user", "data": err.Error()})
 	}
-	if len(userRows) == 0 {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database insert", "data": userRows})
-	}
-	user := userRows[0]
 
 	// Email the OTP
-	err = mail.SendEmailCode(user.Email, otp)
+	err = mail.SendEmailCode(user.Email, u.OTP)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification", "data": err.Error()})
 	}
@@ -129,14 +121,10 @@ func VerifyEmail(c *fiber.Ctx) error {
 	userId := uint(id)
 
 	// Get user
-	userRows, err := db.GetUserById(userId)
+	user, err := db.GetUserById(userId)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database", "data": err.Error()})
 	}
-	if len(userRows) == 0 {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not found in database", "data": userRows})
-	}
-	user := userRows[0]
 
 	// Make sure user's current status is "unverified" before continuing
 	if user.Status != userstatus.UNVERIFIED {
@@ -145,12 +133,9 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Update userStatus to "active"
 	user.Status = userstatus.ACTIVE
-	userRows, err = db.UpdateUser(&user)
+	user, err = db.UpdateUser(&user)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user", "data": err.Error()})
-	}
-	if len(userRows) == 0 {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "User record was not returned after database update. However, it is likely that the user was still updated.", "data": userRows})
 	}
 
 	// Redirect to success webpage
