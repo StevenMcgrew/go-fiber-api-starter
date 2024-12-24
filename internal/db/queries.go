@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"go-fiber-api-starter/internal/models"
 	"log"
 	"os"
@@ -65,22 +64,6 @@ func None(sql string, args pgx.NamedArgs) error {
 	return nil
 }
 
-func Transaction(sqlStatements []string) error {
-	err := pgx.BeginFunc(Ctx, Pool, func(tx pgx.Tx) error {
-		for i, sql := range sqlStatements {
-			_, err := tx.Exec(Ctx, sql)
-			if err != nil {
-				return fmt.Errorf("error executing sql statement at index [%v] during transaction: %w", i, err)
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetUserById(id uint) (models.User, error) {
 	row, err := One("SELECT * FROM users WHERE id = @id LIMIT 1;",
 		pgx.NamedArgs{"id": id},
@@ -133,5 +116,14 @@ func UpdateUser(user *models.User) (models.User, error) {
 			"imageUrl":  user.ImageUrl,
 			"deletedAt": user.DeletedAt},
 		&models.User{})
+	return row, err
+}
+
+func InsertNotification(n *models.Notification) (models.Notification, error) {
+	row, err := One(`INSERT INTO notifications (text_content, has_viewed, user_id)
+						VALUES (@textContent, @hasViewed, @userId)
+						RETURNING *;`,
+		pgx.NamedArgs{"textContent": n.TextContent, "hasViewed": n.HasViewed, "userId": n.UserId},
+		&models.Notification{})
 	return row, err
 }

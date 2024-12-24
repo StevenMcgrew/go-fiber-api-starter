@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     text_content TEXT NOT NULL,
+    has_viewed BOOLEAN NOT NULL,
     user_id INT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -33,12 +33,11 @@ END;
 $$;
 
 
--- TRIGGERS for TIMESTAMP
+-- TRIGGER for TIMESTAMP
 CREATE OR REPLACE TRIGGER update_timestamp BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE OR REPLACE TRIGGER update_timestamp BEFORE UPDATE ON notifications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
--- FUNCTION to ADD CONSTRAINT IF NOT EXISTS (Postgresql doesn't have this built-in yet)
+-- FUNCTION to 'ADD CONSTRAINT IF NOT EXISTS' (Postgresql doesn't have this built-in)
 CREATE OR REPLACE FUNCTION add_constraint_if_not_exists(table_name text, constraint_name text, constraint_sql text) RETURNS void
 LANGUAGE plpgsql AS
 $$
