@@ -1,10 +1,30 @@
 package db
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/models"
+	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/jackc/pgx/v5"
 )
+
+func ExecuteSqlFile(path string) {
+	path, pathErr := filepath.Abs(path)
+	if pathErr != nil {
+		log.Fatal("Error getting absolute path to sql file:", pathErr)
+	}
+	bytes, ioErr := os.ReadFile(path)
+	if ioErr != nil {
+		log.Fatal("Error reading sql file: ", ioErr)
+	}
+	sql := string(bytes)
+	_, execErr := Pool.Exec(Ctx, sql)
+	if execErr != nil {
+		log.Fatal("Error executing sql from file: ", execErr)
+	}
+}
 
 func Many[T any](sql string, args pgx.NamedArgs, ptrModel *T) ([]T, error) {
 	// Run the query
@@ -35,6 +55,30 @@ func One[T any](sql string, args pgx.NamedArgs, ptrModel *T) (T, error) {
 		return *ptrModel, pgx.ErrNoRows
 	}
 	return parsedRows[0], nil
+}
+
+func None(sql string, args pgx.NamedArgs) error {
+	_, err := Pool.Exec(Ctx, sql, args)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Transaction(sqlStatements []string) error {
+	err := pgx.BeginFunc(Ctx, Pool, func(tx pgx.Tx) error {
+		for i, sql := range sqlStatements {
+			_, err := tx.Exec(Ctx, sql)
+			if err != nil {
+				return fmt.Errorf("error executing sql statement at index [%v] during transaction: %w", i, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetUserById(id uint) (models.User, error) {

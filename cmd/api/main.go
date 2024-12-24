@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -23,6 +24,7 @@ func main() {
 
 	db.Connect(os.Getenv("DB_URL"))
 	db.ExecuteSqlFile("./internal/db/create-db.sql")
+	fmt.Println("Database is ready.")
 	router.SetupRoutes(app)
 
 	log.Fatal(app.Listen(":" + os.Getenv("PORT")))

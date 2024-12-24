@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/db"
-	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/enums/usertype"
-	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -76,10 +75,10 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Email the OTP
-	err = mail.SendEmailCode(user.Email, u.OTP)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification", "data": err.Error()})
-	}
+	// err = mail.SendEmailCode(user.Email, u.OTP)
+	// if err != nil {
+	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification", "data": err.Error()})
+	// }
 
 	// Serialize user
 	userForResponse := serialization.ToUserForResponse(&user)
@@ -89,57 +88,60 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func VerifyEmail(c *fiber.Ctx) error {
-	var heading string
-	var message string
-	var email string
+	// Shape of data in request body
+	type reqBody struct {
+		Email string `json:"email" form:"email"`
+		OTP   string `json:"otp" form:"otp"`
+	}
+	body := &reqBody{}
 
-	// Get tokenString from path /api/v1/users/verify/:token
-	tokenString := c.Params("token")
-	if tokenString == "" {
-		c.Locals(heading, "&#x26A0; Invalid")
-		c.Locals(message, "Token parameter is missing from url path")
-		c.Locals(email, "")
-		return EmailVerificationFailurePage(c)
-		// return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Token parameter is missing from url path", "data": map[string]interface{}{"token": tokenString}})
+	// Get email address and otp from body
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing email verification data", "data": err.Error()})
 	}
 
-	// Parse/Verify the token
-	token, err := utils.ParseAndVerifyJWT(tokenString)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "JWT verification error", "data": err.Error()})
-	}
-
-	// Get userId out of JWT claims
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error extracting claims from JWT", "data": ""})
-	}
-	id, ok := claims[jwtclaimkeys.USER_ID].(float64)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user id from JWT claims", "data": ""})
-	}
-	userId := uint(id)
-
-	// Get user
-	user, err := db.GetUserById(userId)
+	// Get user by email
+	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database", "data": err.Error()})
 	}
 
 	// Make sure user's current status is "unverified" before continuing
 	if user.Status != userstatus.UNVERIFIED {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified.", "data": ""})
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified.", "data": serialization.ToUserForResponse(&user)})
 	}
 
-	// Update userStatus to "active"
+	// Check if it's been too long since code was emailed
+	expiration := user.CreatedAt.Add(15 * time.Minute)
+	if time.Now().After(expiration) {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The email verification code has expired", "data": ""})
+	}
+
+	// Verify otp
+	if user.OTP != body.OTP {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The email verification code did not match", "data": ""})
+	}
+
+	// Set user status, clear otp, and set a variable for notification text_content
 	user.Status = userstatus.ACTIVE
-	user, err = db.UpdateUser(&user)
+	user.OTP = ""
+	notificationText := "You have not verified your email address yet"
+
+	// Save user and notification
+	sqlStatements := []string{
+		fmt.Sprintf(`UPDATE users SET status = '%s', otp = '%s' WHERE id = %d;`, userstatus.ACTIVE, user.OTP, user.Id),
+		fmt.Sprintf(`INSERT INTO notifications (text_content, user_id) VALUES ('%s', %d);`, notificationText, user.Id),
+	}
+	err = db.Transaction(sqlStatements)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving email verification data to database", "data": err.Error()})
 	}
 
-	// Redirect to success webpage
-	return c.Redirect("/email-verification-success")
+	// Serialize user
+	userForResponse := serialization.ToUserForResponse(&user)
+
+	// Send user in response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Email has been verified", "data": userForResponse})
 }
 
 // UpdateUser update user
