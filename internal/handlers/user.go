@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"go-fiber-api-starter/internal/db"
+	"go-fiber-api-starter/internal/enums/userrole"
 	"go-fiber-api-starter/internal/enums/userstatus"
-	"go-fiber-api-starter/internal/enums/usertype"
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/serialization"
@@ -72,7 +72,7 @@ func CreateUser(c *fiber.Ctx) error {
 		Username: userSignUp.Username,
 		Password: string(pwdBytes),
 		OTP:      utils.RandomSixDigitStr(),
-		Role:     usertype.REGULAR,
+		Role:     userrole.REGULAR,
 		Status:   userstatus.UNVERIFIED,
 	}
 

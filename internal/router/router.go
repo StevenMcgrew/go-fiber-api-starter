@@ -3,14 +3,13 @@ package router
 import (
 	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/handlers"
-	"go-fiber-api-starter/internal/middleware"
+	mw "go-fiber-api-starter/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-// SetupRoutes setup router api
 func SetupRoutes(app *fiber.App) {
 
 	// Logger
@@ -37,29 +36,24 @@ func SetupRoutes(app *fiber.App) {
 	// Health check
 	app.Get("/health", handlers.HealthCheck)
 
-	// Initial grouping of API and version route paths
+	// Initial grouping of route paths
 	api := app.Group("/api", logger.New())
 	v1 := api.Group("/v1")
-	// v2 := api.Group("/v2")
 
-	// "/api/v1" Routes:
-	auth := v1.Group("/auth")
+	auth := v1.Group("/auth") // /api/v1/auth
 	auth.Post("/login", handlers.Login)
 
-	user := v1.Group("/users")
+	user := v1.Group("/users") // /api/v1/users
 	user.Post("/", handlers.CreateUser)
 	user.Put("/verify-email", handlers.VerifyEmail)
 	user.Put("/resend-email-verification", handlers.ResendEmailVerification)
-	user.Get("/:id", handlers.GetUser)
-	user.Patch("/:id", middleware.Authn(), handlers.UpdateUser)
-	user.Delete("/:id", middleware.Authn(), handlers.DeleteUser)
+	user.Get("/:id", mw.Authn, handlers.GetUser)
+	user.Patch("/:id", mw.Authn, handlers.UpdateUser)
+	user.Delete("/:id", mw.Authn, handlers.DeleteUser)
 
 	something := v1.Group("/somethings")
-	something.Get("/", handlers.GetAllSomethings)
-	something.Get("/:id", handlers.GetSomething)
-	something.Post("/", middleware.Authn(), handlers.CreateSomething)
-	something.Delete("/:id", middleware.Authn(), handlers.DeleteSomething)
-
-	// // "/api/v2" Routes:
-	// //   put your v2 routes here
+	something.Get("/", mw.Authn, mw.AdminOnly, handlers.GetAllSomethings)
+	something.Get("/:id", mw.Authn, handlers.GetSomething)
+	something.Post("/", mw.Authn, handlers.CreateSomething)
+	something.Delete("/:id", mw.Authn, handlers.DeleteSomething)
 }

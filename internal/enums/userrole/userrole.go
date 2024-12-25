@@ -1,4 +1,4 @@
-package usertype
+package userrole
 
 const (
 	ADMIN   = "admin"

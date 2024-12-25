@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"go-fiber-api-starter/internal/enums/jwtclaimkeys"
+	"go-fiber-api-starter/internal/enums/jwtuserclaims"
 	"go-fiber-api-starter/internal/models"
 	"math/rand"
 	"os"
@@ -14,9 +14,9 @@ import (
 
 func CreateUserJWT(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		jwtclaimkeys.USER_ID:     user.Id,
-		jwtclaimkeys.USER_TYPE:   user.Role,
-		jwtclaimkeys.USER_STATUS: user.Status,
+		jwtuserclaims.ID:     user.Id,
+		jwtuserclaims.ROLE:   user.Role,
+		jwtuserclaims.STATUS: user.Status,
 	})
 	return token.SignedString([]byte(os.Getenv("SECRET")))
 }
