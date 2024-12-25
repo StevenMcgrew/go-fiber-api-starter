@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/serialization"
@@ -11,7 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Login get user and password
 func Login(c *fiber.Ctx) error {
 	// Shape of request body
 	type reqBody struct {
@@ -22,7 +20,8 @@ func Login(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
+			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Validate inputs
@@ -34,44 +33,40 @@ func Login(c *fiber.Ctx) error {
 		isValid = false
 	}
 	if !isValid {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are invalid", "data": ""})
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are invalid",
+			"data": map[string]any{"errorMessage": "Login credentials are invalid"}})
 	}
 
 	// Get user by email
 	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
+			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Make sure user status is 'active'
 	if user.Status != userstatus.ACTIVE {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": fmt.Sprintf("Current user status is '%s'. No login allowed.", user.Status), "data": ""})
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Cannot login users who have an account status of " + user.Status,
+			"data": map[string]any{"errorMessage": "Cannot login users who have an account status of " + user.Status}})
 	}
 
 	// Check password
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are incorrect", "data": ""})
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are incorrect",
+			"data": map[string]any{"errorMessage": "Login credentials are incorrect"}})
 	}
 
 	// Create JWT
 	jwt, err := utils.CreateUserJWT(&user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating a JWT", "data": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating a JWT",
+			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
-	// Create response
-	response := fiber.Map{
-		"status":  "success",
-		"message": "User has been logged in",
-		"data": map[string]any{
-			"user":  userResponse,
-			"token": jwt,
-		},
-	}
-
-	// Send response
-	return c.Status(200).JSON(response)
+	// Send user and jwt
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "User has been logged in",
+		"data": map[string]any{"user": userResponse, "token": jwt}})
 }
