@@ -109,9 +109,21 @@ func VerifyEmail(c *fiber.Ctx) error {
 	}
 	body := &reqBody{}
 
-	// Get email address and otp from body
+	// Parse body
 	if err := c.BodyParser(body); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing email verification data", "data": err.Error()})
+	}
+
+	// Validate inputs
+	warnings := make([]string, 0, 2)
+	if !utils.IsEmailValid(body.Email) {
+		warnings = append(warnings, "Email is invalid")
+	}
+	if !utils.IsOtpValid(body.OTP) {
+		warnings = append(warnings, "Verification code is invalid")
+	}
+	if len(warnings) > 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs", "data": warnings})
 	}
 
 	// Get user by email
@@ -122,7 +134,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Make sure user's current status is "unverified" before continuing
 	if user.Status != userstatus.UNVERIFIED {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified.", "data": serialization.UserResponse(&user)})
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "This user has already been verified", "data": serialization.UserResponse(&user)})
 	}
 
 	// Check if it's been too long since code was emailed

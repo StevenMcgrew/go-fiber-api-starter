@@ -47,6 +47,20 @@ func IsAlphanumeric(str string) bool {
 	})
 }
 
+func IsInteger(str string) bool {
+	return !strings.ContainsFunc(str, func(r rune) bool {
+		return (r < '0' || r > '9')
+	})
+}
+
+func IsOtpValid(otp string) bool {
+	runeCount := utf8.RuneCountInString(otp)
+	if runeCount != 6 {
+		return false
+	}
+	return IsInteger(otp)
+}
+
 func IsEmailValid(email string) bool {
 	if !strings.Contains(email, "@") {
 		return false
