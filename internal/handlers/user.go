@@ -25,7 +25,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// Parse
 	userSignUp := &models.UserSignUp{}
 	if err := c.BodyParser(userSignUp); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing Sign Up data",
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing Sign Up data",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
@@ -122,16 +122,16 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing email verification data",
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing email verification data",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Validate inputs
 	warnings := make([]string, 0, 2)
-	if !utils.IsEmailValid(body.Email) {
+	if !validation.IsEmailValid(body.Email) {
 		warnings = append(warnings, "Email is invalid")
 	}
-	if !utils.IsOtpValid(body.OTP) {
+	if !validation.IsOtpValid(body.OTP) {
 		warnings = append(warnings, "Verification code is invalid")
 	}
 	if len(warnings) > 0 {
@@ -165,7 +165,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": "The email verification code did not match"}})
 	}
 
-	// Set user status and clear otp
+	// Set user status and clear out otp
 	user.Status = userstatus.ACTIVE
 	user.OTP = ""
 
@@ -181,6 +181,63 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Send user in response
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Email has been verified",
+		"data": map[string]any{"user": userResponse}})
+}
+
+func ResendEmailVerification(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Email string `json:"email" form:"email"`
+	}
+	body := &reqBody{}
+
+	// Parse body
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing email address from request body",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate input
+	if !validation.IsEmailValid(body.Email) {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Email address is invalid",
+			"data": map[string]any{"errorMessage": "Email address is invalid"}})
+	}
+
+	// Get user by email
+	user, err := db.GetUserByEmail(body.Email)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Make sure user status is 'unverified' before continuing
+	if user.Status != userstatus.UNVERIFIED {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The user's current status is '" + user.Status + "'",
+			"data": map[string]any{"errorMessage": "This user has already been verified"}})
+	}
+
+	// Set new OTP for user
+	user.OTP = utils.RandomSixDigitStr()
+
+	// Save user with new code
+	updatedUser, err := db.UpdateUser(&user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user in database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Resend email verification
+	err = mail.SendEmailCode(body.Email, updatedUser.OTP)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when resending the email verification",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send user in response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Another email verification has been sent",
 		"data": map[string]any{"user": userResponse}})
 }
 

@@ -5,6 +5,7 @@ import (
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
+	"go-fiber-api-starter/internal/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -20,16 +21,16 @@ func Login(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Validate inputs
 	isValid := true
-	if !utils.IsEmailValid(body.Email) {
+	if !validation.IsEmailValid(body.Email) {
 		isValid = false
 	}
-	if !utils.IsPasswordValid(body.Password) {
+	if !validation.IsPasswordValid(body.Password) {
 		isValid = false
 	}
 	if !isValid {
