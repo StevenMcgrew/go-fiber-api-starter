@@ -47,6 +47,7 @@ func SetupRoutes(app *fiber.App) {
 	user.Post("/", handlers.CreateUser)
 	user.Put("/verify-email", handlers.VerifyEmail)
 	user.Put("/resend-email-verification", handlers.ResendEmailVerification)
+	// user.Get("/", mw.Authn, handlers.GetAllUsers)
 	user.Get("/:id", mw.Authn, handlers.GetUser)
 	user.Patch("/:id", mw.Authn, handlers.UpdateUser)
 	user.Delete("/:id", mw.Authn, handlers.DeleteUser)

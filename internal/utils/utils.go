@@ -18,17 +18,26 @@ func CreateUserJWT(user *models.User) (string, error) {
 		jwtuserclaims.ROLE:   user.Role,
 		jwtuserclaims.STATUS: user.Status,
 	})
-	return token.SignedString([]byte(os.Getenv("SECRET")))
+	secret := []byte(os.Getenv("SECRET"))
+	return token.SignedString(secret)
 }
 
+// https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
 func ParseAndVerifyJWT(tokenString string) (*jwt.Token, error) {
-	// https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
+	if tokenString == "" { // Need to check for empty string because jwt.Parse will return a nil token instead of setting an error
+		return nil, fmt.Errorf("JWT parse error: the tokenString is empty")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("SECRET")), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
+	if err != nil {
+		return nil, fmt.Errorf("JWT parse error: %v", err.Error())
+	}
+
 	if !token.Valid {
-		return nil, fmt.Errorf("JWT error: %v", err.Error())
+		return nil, fmt.Errorf("invalid token: %v", token)
 	}
 	return token, nil
 }

@@ -16,10 +16,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUser(c *fiber.Ctx) error {
-	return nil
-}
-
 func CreateUser(c *fiber.Ctx) error {
 
 	// Parse
@@ -238,6 +234,34 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 
 	// Send user in response
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Another email verification has been sent",
+		"data": map[string]any{"user": userResponse}})
+}
+
+func GetUser(c *fiber.Ctx) error {
+	// Struct for path param at /api/v1/users/:id
+	param := struct {
+		Id uint `params:"id"`
+	}{}
+
+	// Parse param
+	err := c.ParamsParser(&param)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Unable to parse id from path parameter",
+			"data": map[string]any{"errorMessage": "Unable to parse id from path parameter"}})
+	}
+
+	// Get user by id
+	user, err := db.GetUserById(param.Id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&user)
+
+	// Send user
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Retrieved user from database",
 		"data": map[string]any{"user": userResponse}})
 }
 
