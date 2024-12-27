@@ -17,7 +17,6 @@ import (
 )
 
 func CreateUser(c *fiber.Ctx) error {
-
 	// Parse
 	userSignUp := &models.UserSignUp{}
 	if err := c.BodyParser(userSignUp); err != nil {
@@ -257,34 +256,50 @@ func GetUser(c *fiber.Ctx) error {
 		"data": map[string]any{"user": userResponse}})
 }
 
-// UpdateUser update user
 func UpdateUser(c *fiber.Ctx) error {
-	// type UpdateUserInput struct {
-	// 	Names string `json:"names"`
-	// }
-	// var uui UpdateUserInput
-	// if err := c.BodyParser(&uui); err != nil {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
-	// }
-	// id := c.Params("id")
-	// token := c.Locals("user").(*jwt.Token)
+	// Parse
+	userUpdate := &models.UserUpdate{}
+	if err := c.BodyParser(userUpdate); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing request body",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
 
-	// if !validToken(token, id) {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
-	// }
+	// Validate
+	if warnings := validation.ValidateUserUpdate(userUpdate); warnings != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
+			"data": map[string]any{"errorMessage": warnings}})
+	}
 
-	// db := database.Conn
-	// var user model.User
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	}
 
-	// db.First(&user, id)
-	// // user.Names = uui.Names
-	// db.Save(&user)
+	// Set updated fields
+	user.Email = userUpdate.Email
+	user.Username = userUpdate.Username
+	user.Password = userUpdate.Password
+	user.Role = userUpdate.Role
+	user.Status = userUpdate.Status
+	user.ImageUrl = userUpdate.ImageUrl
 
-	// return c.JSON(fiber.Map{"status": "success", "message": "User successfully updated", "data": user})
-	return nil
+	// Save to db
+	updatedUser, err := db.UpdateUser(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating user in database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved updated user to database",
+		"data": map[string]any{"user": userResponse}})
 }
 
-// DeleteUser delete user
 func DeleteUser(c *fiber.Ctx) error {
 	// type PasswordInput struct {
 	// 	Password string `json:"password"`

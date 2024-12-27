@@ -2,6 +2,7 @@ package validation
 
 import (
 	"go-fiber-api-starter/internal/utils"
+	"net/url"
 	"strings"
 	"unicode/utf8"
 )
@@ -40,4 +41,12 @@ func IsPasswordValid(password string) bool {
 		return false
 	}
 	return true
+}
+
+func IsUrlValid(URL string) bool {
+	if len(URL) > 2048 {
+		return false
+	}
+	_, err := url.Parse("sfdsf")
+	return err == nil
 }
