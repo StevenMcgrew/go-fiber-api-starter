@@ -2,7 +2,7 @@ package router
 
 import (
 	"go-fiber-api-starter/internal/config"
-	"go-fiber-api-starter/internal/handlers"
+	hn "go-fiber-api-starter/internal/handlers"
 	mw "go-fiber-api-starter/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -29,32 +29,32 @@ func SetupRoutes(app *fiber.App) {
 	app.Static("/", "./public", config.FiberStaticConfig)
 
 	// Web pages
-	app.Get("/", handlers.HomePage)
-	app.Get("/email-verification-success", handlers.EmailVerificationSuccessPage)
-	app.Get("/email-verification-failure", handlers.EmailVerificationFailurePage)
+	app.Get("/", hn.HomePage)
+	app.Get("/email-verification-success", hn.EmailVerificationSuccessPage)
+	app.Get("/email-verification-failure", hn.EmailVerificationFailurePage)
 
 	// Health check
-	app.Get("/health", handlers.HealthCheck)
+	app.Get("/health", hn.HealthCheck)
 
-	// Initial grouping of route paths
-	api := app.Group("/api", logger.New())
-	v1 := api.Group("/v1")
+	// Initial grouping of path
+	v1 := app.Group("/api/v1")
 
-	auth := v1.Group("/auth") // /api/v1/auth
-	auth.Post("/login", handlers.Login)
+	// AUTH
+	v1.Post("/auth/login", hn.Login)
 
-	user := v1.Group("/users") // /api/v1/users
-	user.Post("/", handlers.CreateUser)
-	user.Put("/verify-email", handlers.VerifyEmail)
-	user.Put("/resend-email-verification", handlers.ResendEmailVerification)
-	// user.Get("/", mw.Authn, handlers.GetAllUsers)
-	user.Get("/:id", mw.Authn, handlers.GetUser)
-	user.Patch("/:id", mw.Authn, handlers.UpdateUser)
-	user.Delete("/:id", mw.Authn, handlers.DeleteUser)
+	// USERS
+	v1.Post("/users/", hn.CreateUser)
+	v1.Patch("/users/verify-email", hn.VerifyEmail)
+	v1.Patch("/users/resend-email-verification", hn.ResendEmailVerification)
+	v1.Get("/users/:userId", mw.Authn, mw.AttachUser, hn.GetUser)
+	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
+	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.UpdateUser)
+	v1.Delete("/users/:userId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.DeleteUser)
 
-	something := v1.Group("/somethings")
-	something.Get("/", mw.Authn, mw.AdminOnly, handlers.GetAllSomethings)
-	something.Get("/:id", mw.Authn, handlers.GetSomething)
-	something.Post("/", mw.Authn, handlers.CreateSomething)
-	something.Delete("/:id", mw.Authn, handlers.DeleteSomething)
+	// NOTIFICATIONS
+	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.GetAllNotificationsForUser)
+	v1.Get("/notifications/", mw.Authn, mw.AllowAdminOnly, hn.GetAllNotifications)
+	v1.Get("/notifications/:noteId", mw.Authn, mw.AllowAdminOnly, hn.GetNotification)
+	v1.Post("/notifications/", mw.Authn, mw.AllowAdminOnly, hn.CreateNotification)
+	v1.Delete("/users/:userId/notifications/:noteId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.DeleteNotification)
 }

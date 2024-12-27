@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"go-fiber-api-starter/internal/enums/jwtuserclaims"
 	"go-fiber-api-starter/internal/models"
 	"math/rand"
 	"os"
@@ -12,34 +11,34 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func CreateUserJWT(user *models.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		jwtuserclaims.ID:     user.Id,
-		jwtuserclaims.ROLE:   user.Role,
-		jwtuserclaims.STATUS: user.Status,
-	})
+func CreateJWT(user *models.User) (string, error) {
+	claims := &models.JwtPayload{
+		UserId:           user.Id,
+		UserRole:         user.Role,
+		UserStatus:       user.Status,
+		RegisteredClaims: jwt.RegisteredClaims{},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secret := []byte(os.Getenv("SECRET"))
 	return token.SignedString(secret)
 }
 
 // https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
-func ParseAndVerifyJWT(tokenString string) (*jwt.Token, error) {
-	if tokenString == "" { // Need to check for empty string because jwt.Parse will return a nil token instead of setting an error
-		return nil, fmt.Errorf("JWT parse error: the tokenString is empty")
-	}
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func ParseAndVerifyJWT(tokenString string) (*models.JwtPayload, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &models.JwtPayload{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("SECRET")), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
-
 	if err != nil {
 		return nil, fmt.Errorf("JWT parse error: %v", err.Error())
 	}
-
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token: %v", token)
 	}
-	return token, nil
+	payload, ok := token.Claims.(*models.JwtPayload)
+	if !ok {
+		return nil, fmt.Errorf("payload of JWT is of the incorrect type")
+	}
+	return payload, nil
 }
 
 func RandomSixDigitStr() string {
@@ -59,8 +58,4 @@ func IsInteger(str string) bool {
 	return !strings.ContainsFunc(str, func(r rune) bool {
 		return (r < '0' || r > '9')
 	})
-}
-
-func DoesPasswordRepeatMatch(password string, passwordRepeat string) bool {
-	return password == passwordRepeat
 }

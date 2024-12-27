@@ -58,7 +58,7 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	// Create JWT
-	jwt, err := utils.CreateUserJWT(&user)
+	jwt, err := utils.CreateJWT(&user)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating a JWT",
 			"data": map[string]any{"errorMessage": err.Error()}})

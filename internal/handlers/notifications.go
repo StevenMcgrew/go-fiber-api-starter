@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetAllSomethings(c *fiber.Ctx) error {
+func GetAllNotifications(c *fiber.Ctx) error {
 	// db := database.Pool
 	// var somethings []model.Something
 	// db.Find(&somethings)
@@ -12,7 +12,11 @@ func GetAllSomethings(c *fiber.Ctx) error {
 	return nil
 }
 
-func GetSomething(c *fiber.Ctx) error {
+func GetAllNotificationsForUser(c *fiber.Ctx) error {
+	return nil
+}
+
+func GetNotification(c *fiber.Ctx) error {
 	// id := c.Params("id")
 	// db := database.Conn
 	// var something model.Something
@@ -24,7 +28,7 @@ func GetSomething(c *fiber.Ctx) error {
 	return nil
 }
 
-func CreateSomething(c *fiber.Ctx) error {
+func CreateNotification(c *fiber.Ctx) error {
 	// db := database.Conn
 	// something := new(model.Something)
 	// if err := c.BodyParser(something); err != nil {
@@ -35,7 +39,7 @@ func CreateSomething(c *fiber.Ctx) error {
 	return nil
 }
 
-func DeleteSomething(c *fiber.Ctx) error {
+func DeleteNotification(c *fiber.Ctx) error {
 	// id := c.Params("id")
 	// db := database.Conn
 
