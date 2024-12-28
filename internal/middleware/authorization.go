@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func AllowAdminOnly(c *fiber.Ctx) error {
+func OnlyAdmin(c *fiber.Ctx) error {
 	// Type assert payload
 	payload, ok := c.Locals("jwtPayload").(*models.JwtPayload)
 	if !ok {
@@ -24,7 +24,7 @@ func AllowAdminOnly(c *fiber.Ctx) error {
 	}
 }
 
-func AllowAdminOrOwner(c *fiber.Ctx) error {
+func OnlyAdminOrOwner(c *fiber.Ctx) error {
 	// Get the user that is requesting access
 	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtPayload)
 	if !ok {

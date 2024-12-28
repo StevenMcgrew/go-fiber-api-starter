@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"go-fiber-api-starter/internal/db"
+	"go-fiber-api-starter/internal/models"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func AttachUser(c *fiber.Ctx) error {
-	// Parse user id from path
+	// Parse userId from path
 	id, err := c.ParamsInt("userId")
 	if err != nil || id == 0 {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
@@ -24,6 +25,23 @@ func AttachUser(c *fiber.Ctx) error {
 
 	// Add user to c.Locals()
 	c.Locals("user", &user)
+
+	return c.Next()
+}
+
+func AttachUserId(c *fiber.Ctx) error {
+	// Parse userId from path
+	id, err := c.ParamsInt("userId")
+	if err != nil || id == 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
+			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
+	}
+	userId := uint(id)
+
+	// Add user id to c.Locals()
+	user := &models.User{}
+	user.Id = userId
+	c.Locals("user", user)
 
 	return c.Next()
 }

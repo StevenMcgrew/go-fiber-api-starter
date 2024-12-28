@@ -48,13 +48,13 @@ func SetupRoutes(app *fiber.App) {
 	v1.Patch("/users/resend-email-verification", hn.ResendEmailVerification)
 	v1.Get("/users/:userId", mw.Authn, mw.AttachUser, hn.GetUser)
 	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
-	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.UpdateUser)
-	v1.Delete("/users/:userId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.DeleteUser)
+	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateUser)
+	v1.Delete("/users/:userId", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.DeleteUser)
 
 	// NOTIFICATIONS
-	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.GetAllNotificationsForUser)
-	v1.Get("/notifications/", mw.Authn, mw.AllowAdminOnly, hn.GetAllNotifications)
-	v1.Get("/notifications/:noteId", mw.Authn, mw.AllowAdminOnly, hn.GetNotification)
-	v1.Post("/notifications/", mw.Authn, mw.AllowAdminOnly, hn.CreateNotification)
-	v1.Delete("/users/:userId/notifications/:noteId", mw.Authn, mw.AttachUser, mw.AllowAdminOrOwner, hn.DeleteNotification)
+	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.GetAllNotificationsForUser)
+	v1.Get("/notifications/", mw.Authn, mw.OnlyAdmin, hn.GetAllNotifications)
+	v1.Get("/notifications/:noteId", mw.Authn, mw.OnlyAdmin, hn.GetNotification)
+	v1.Post("/notifications/", mw.Authn, mw.OnlyAdmin, hn.CreateNotification)
+	v1.Delete("/users/:userId/notifications/:noteId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.DeleteNotification)
 }

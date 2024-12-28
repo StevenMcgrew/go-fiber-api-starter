@@ -301,30 +301,21 @@ func UpdateUser(c *fiber.Ctx) error {
 }
 
 func DeleteUser(c *fiber.Ctx) error {
-	// type PasswordInput struct {
-	// 	Password string `json:"password"`
-	// }
-	// var pi PasswordInput
-	// if err := c.BodyParser(&pi); err != nil {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
-	// }
-	// id := c.Params("id")
-	// token := c.Locals("user").(*jwt.Token)
+	// Type assert user (the user should be in c.Locals() from AttachUserId() middleware).
+	// The user only has the Id field set on this route, the other fields are empty or nil.
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	}
 
-	// if !validToken(token, id) {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
-	// }
+	// Delete the user
+	if err := db.DeleteUserById(user.Id); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error deleting user from database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
 
-	// if !validUser(id, pi.Password) {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Not valid user", "data": nil})
-	// }
-
-	// db := database.Conn
-	// var user model.User
-
-	// db.First(&user, id)
-
-	// db.Delete(&user)
-	// return c.JSON(fiber.Map{"status": "success", "message": "User successfully deleted", "data": nil})
-	return nil
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Deleted user from database",
+		"data": map[string]any{"userId": user.Id}})
 }

@@ -54,7 +54,9 @@ $$;
 
 
 -- FOREIGN KEY CONSTRAINTS
-SELECT add_constraint_if_not_exists('notifications', 'fk_notifications_users', 'FOREIGN KEY (user_id) REFERENCES users(id);');
+SELECT add_constraint_if_not_exists('notifications',
+                                    'fk_notifications_users',
+                                    'FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;');
 
 
 -- INSERT FAKE USERS (all the passwords are '12345678', but they have been hashed by bcrypt)

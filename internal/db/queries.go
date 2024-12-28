@@ -119,6 +119,17 @@ func UpdateUser(user *models.User) (models.User, error) {
 	return row, err
 }
 
+func SoftDeleteUser(id uint) error {
+	return nil
+}
+
+func DeleteUserById(id uint) error {
+	if err := None(`DELETE FROM users WHERE id = @id;`, pgx.NamedArgs{"id": id}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func InsertNotification(n *models.Notification) (models.Notification, error) {
 	row, err := One(`INSERT INTO notifications (text_content, has_viewed, user_id)
 						VALUES (@textContent, @hasViewed, @userId)
