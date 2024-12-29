@@ -168,6 +168,16 @@ func UpdateUser(c *fiber.Ctx) error {
 		}
 	}
 
+	// Hash password
+	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(userUpdate.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Set password
+	userUpdate.Password = string(pwdBytes)
+
 	// Save to db
 	updatedUser, err := db.UpdateUser(user.Id, userUpdate)
 	if err != nil {
@@ -183,9 +193,87 @@ func UpdateUser(c *fiber.Ctx) error {
 		"data": map[string]any{"user": userResponse}})
 }
 
+func UpdatePassword(c *fiber.Ctx) error {
+	// Shape of data in request body
+	type reqBody struct {
+		CurrentPassword   string `json:"currentPassword" form:"currentPassword"`
+		NewPassword       string `json:"newPassword" form:"newPassword"`
+		RepeatNewPassword string `json:"repeatNewPassword" form:"repeatNewPassword"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing password data",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate inputs
+	warnings := make([]string, 0, 3)
+	if !validation.IsPasswordValid(body.CurrentPassword) {
+		warnings = append(warnings, "Current password is invalid")
+	}
+	if !validation.IsPasswordValid(body.NewPassword) {
+		warnings = append(warnings, "New password is invalid")
+	}
+	if body.NewPassword != body.RepeatNewPassword {
+		warnings = append(warnings, "NewPassword and RepeatNewPassword do not match")
+	}
+	if len(warnings) > 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
+			"data": map[string]any{"errorMessage": warnings}})
+	}
+
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	}
+
+	// Type assert payload (the jwt payload should be in c.Locals() from Authn() middleware)
+	payload, ok := c.Locals("jwtPayload").(*models.JwtPayload)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
+	}
+
+	// Check password, if not admin (this is an extra security check in addition to the middleware checks)
+	if payload.UserRole != userrole.ADMIN {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
+			return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
+				"data": map[string]any{"errorMessage": "Password input is incorrect"}})
+		}
+	}
+
+	// Hash new password
+	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Set password
+	hashedPassword := string(pwdBytes)
+
+	// Save to db
+	updatedUser, err := db.UpdatePassword(user.Id, hashedPassword)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating password in database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved password to database",
+		"data": map[string]any{"user": userResponse}})
+}
+
 func SoftDeleteUser(c *fiber.Ctx) error {
 	// Type assert user (the user should be in c.Locals() from AttachUserId() middleware).
-	// The user only has the Id field set on this route, the other fields are empty or nil.
+	// The user only has the Id field set from AttachUserId().
 	user, ok := c.Locals("user").(*models.User)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",

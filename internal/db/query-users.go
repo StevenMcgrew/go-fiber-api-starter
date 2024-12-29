@@ -61,6 +61,13 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	return row, err
 }
 
+func UpdatePassword(userId uint, password string) (models.User, error) {
+	row, err := One(`UPDATE users SET password = @password WHERE id = @userId RETURNING *;`,
+		pgx.NamedArgs{"password": password, "userId": userId},
+		&models.User{})
+	return row, err
+}
+
 func SoftDeleteUser(id uint) error {
 	if err := None(`UPDATE users
 					SET status = @status, deleted_at = CURRENT_TIMESTAMP
