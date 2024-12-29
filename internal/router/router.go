@@ -41,15 +41,15 @@ func SetupRoutes(app *fiber.App) {
 
 	// AUTH
 	v1.Post("/auth/login", hn.Login)
+	v1.Patch("/auth/verify-email", hn.VerifyEmail)
+	v1.Patch("/auth/resend-email-verification", hn.ResendEmailVerification)
 
 	// USERS
 	v1.Post("/users/", hn.CreateUser)
-	v1.Patch("/users/verify-email", hn.VerifyEmail)
-	v1.Patch("/users/resend-email-verification", hn.ResendEmailVerification)
 	v1.Get("/users/:userId", mw.Authn, mw.AttachUser, hn.GetUser)
 	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
-	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateUser)
-	v1.Delete("/users/:userId", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.DeleteUser)
+	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdmin, hn.UpdateUser)
+	v1.Delete("/users/:userId", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.SoftDeleteUser)
 
 	// NOTIFICATIONS
 	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.GetAllNotificationsForUser)

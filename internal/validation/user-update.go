@@ -11,11 +11,16 @@ func ValidateUserUpdate(u *models.UserUpdate) []string {
 	if !IsEmailValid(u.Email) {
 		m = append(m, "Email address input is invalid")
 	}
-	if !IsUserNameValid(u.Username) {
-		m = append(m, "UserName input is invalid")
+	if !IsUsernameValid(u.Username) {
+		m = append(m, "Username input is invalid")
 	}
 	if !IsPasswordValid(u.Password) {
 		m = append(m, "Password input is invalid")
+	}
+	if len(u.OTP) > 0 {
+		if !IsOtpValid(u.OTP) {
+			m = append(m, "OTP is invalid")
+		}
 	}
 	if u.Role != userrole.ADMIN &&
 		u.Role != userrole.REGULAR {

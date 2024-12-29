@@ -9,7 +9,7 @@ func ValidateUserSignUp(u *models.UserSignUp) []string {
 	if !IsEmailValid(u.Email) {
 		m = append(m, "Email is invalid")
 	}
-	if !IsUserNameValid(u.Username) {
+	if !IsUsernameValid(u.Username) {
 		m = append(m, "UserName is invalid")
 	}
 	if !IsPasswordValid(u.Password) {

@@ -26,12 +26,12 @@ func IsEmailValid(email string) bool {
 	return true
 }
 
-func IsUserNameValid(userName string) bool {
-	runeCount := utf8.RuneCountInString(userName)
+func IsUsernameValid(username string) bool {
+	runeCount := utf8.RuneCountInString(username)
 	if runeCount < 3 || runeCount > 20 {
 		return false
 	}
-	return utils.IsAlphanumeric(userName)
+	return utils.IsAlphanumeric(username)
 }
 
 func IsPasswordValid(password string) bool {
