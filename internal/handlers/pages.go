@@ -15,14 +15,25 @@ func HomePage(c *fiber.Ctx) error {
 }
 
 func EmailVerificationSuccessPage(c *fiber.Ctx) error {
-	data := struct{ ShowLogin bool }{ShowLogin: false}
+	data := struct {
+		ShowLogin bool
+	}{
+		ShowLogin: false,
+	}
 	filenames := []string{"root-layout", "header", "email-verification-success"}
 	return renderAndSendHTML(c, data, filenames)
 }
 
-func EmailVerificationFailurePage(c *fiber.Ctx) error {
-	data := struct{ ShowLogin bool }{ShowLogin: false}
+func EmailVerificationFailurePage(c *fiber.Ctx, failureMessage string) error {
+	data := struct {
+		ShowLogin      bool
+		FailureMessage string
+	}{
+		ShowLogin:      false,
+		FailureMessage: failureMessage,
+	}
 	filenames := []string{"root-layout", "header", "email-verification-failure"}
+	c.Status(400)
 	return renderAndSendHTML(c, data, filenames)
 }
 

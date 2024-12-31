@@ -2,7 +2,7 @@ package userstatus
 
 const (
 	UNVERIFIED = "unverified"
-	ACTIVE     = "active"
+	VERIFIED   = "verified"
 	SUSPENDED  = "suspended"
 	DELETED    = "deleted"
 )

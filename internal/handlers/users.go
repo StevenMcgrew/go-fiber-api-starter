@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userrole"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/serialization"
-	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
+	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,7 +57,6 @@ func CreateUser(c *fiber.Ctx) error {
 		Email:    userSignUp.Email,
 		Username: userSignUp.Username,
 		Password: string(pwdBytes),
-		OTP:      utils.RandomSixDigitStr(),
 		Role:     userrole.REGULAR,
 		Status:   userstatus.UNVERIFIED,
 	}
@@ -68,7 +70,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	// Create notification
 	n := &models.Notification{
-		TextContent: "You have not verified your email address yet",
+		TextContent: "Welcome! Thanks for signing up.",
 		HasViewed:   false,
 		UserId:      user.Id,
 	}
@@ -80,8 +82,26 @@ func CreateUser(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Email the OTP
-	err = mail.SendEmailCode(user.Email, u.OTP)
+	// Create JWT for email verification link
+	claims := &models.JwtVerifyEmail{
+		UserId: user.Id,
+		Email:  user.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Create email verification link
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+
+	// Send verification email
+	err = mail.SendEmailVerification(user.Email, link)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification",
 			"data": map[string]any{"errorMessage": err.Error()}})
@@ -108,7 +128,7 @@ func GetUser(c *fiber.Ctx) error {
 	}
 
 	// Get the user that is requesting access
-	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtPayload)
+	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtUser)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error type asserting jwtPayload",
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
@@ -232,7 +252,7 @@ func UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	// Type assert payload (the jwt payload should be in c.Locals() from Authn() middleware)
-	payload, ok := c.Locals("jwtPayload").(*models.JwtPayload)
+	payload, ok := c.Locals("jwtPayload").(*models.JwtUser)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
@@ -268,6 +288,117 @@ func UpdatePassword(c *fiber.Ctx) error {
 
 	// Send response
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved password to database",
+		"data": map[string]any{"user": userResponse}})
+}
+
+func UpdateEmail(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Email string
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing email data",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate
+	if !validation.IsEmailValid(body.Email) {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Username input is invalid",
+			"data": map[string]any{"errorMessage": "Invalid input"}})
+	}
+
+	// Check if email is already taken
+	msg, err := db.CheckEmailAvailability(body.Email)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Type assert user from c.Locals (The user only has the Id field set from AttachUserId middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	}
+
+	// Create JWT for email verification link
+	claims := &models.JwtVerifyEmail{
+		UserId: user.Id,
+		Email:  body.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Create email verification link
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+
+	// Send verification email
+	err = mail.SendEmailVerification(user.Email, link)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success",
+		"message": fmt.Sprintf("A verification link has been emailed to %s", body.Email), "data": ""})
+}
+
+func UpdateUsername(c *fiber.Ctx) error {
+	// Shape of data in request body
+	type reqBody struct {
+		Username string `json:"username" form:"username"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing username data",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate
+	if !validation.IsUsernameValid(body.Username) {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Username input is invalid",
+			"data": map[string]any{"errorMessage": "Invalid input"}})
+	}
+
+	// Check if username is already taken
+	msg, err := db.CheckUsernameAvailability(body.Username)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Type assert user from c.Locals (The user only has the Id field set from AttachUserId middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	}
+
+	// Save to db
+	updatedUser, err := db.UpdateUsername(user.Id, body.Username)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating username in database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved username to database",
 		"data": map[string]any{"user": userResponse}})
 }
 

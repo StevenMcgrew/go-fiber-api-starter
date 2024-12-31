@@ -8,6 +8,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func InsertUser(user *models.User) (models.User, error) {
+	row, err := One(`INSERT INTO users (email, username, password, role, status, image_url)
+					 VALUES (@email,
+					 		 @username,
+							 @password,
+							 @role,
+							 @status,
+							 @imageUrl)
+					 RETURNING *;`,
+		pgx.NamedArgs{
+			"email":    user.Email,
+			"username": user.Username,
+			"password": user.Password,
+			"role":     user.Role,
+			"status":   user.Status,
+			"imageUrl": user.ImageUrl},
+		&models.User{})
+	return row, err
+}
+
 func GetUserById(id uint) (models.User, error) {
 	row, err := One("SELECT * FROM users WHERE id = @id LIMIT 1;",
 		pgx.NamedArgs{"id": id},
@@ -28,22 +48,12 @@ func GetUserByUsername(username string) (models.User, error) {
 		&models.User{})
 	return row, err
 }
-func InsertUser(user *models.User) (models.User, error) {
-	row, err := One(`INSERT INTO users (email, username, password, otp, role, status, image_url, deleted_at)
-					 VALUES (@email, @username, @password, @otp, @role, @status, @imageUrl, @deletedAt)
-					 RETURNING *;`,
-		pgx.NamedArgs{"email": user.Email, "username": user.Username, "password": user.Password, "otp": user.OTP,
-			"role": user.Role, "status": user.Status, "imageUrl": user.ImageUrl, "deletedAt": user.DeletedAt},
-		&models.User{})
-	return row, err
-}
 
 func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	row, err := One(`UPDATE users
 					 SET email = @email,
 						 username = @username,
 						 password = @password,
-						 otp = @otp,
 						 role = @role,
 						 status = @status,
 						 image_url = @imageUrl
@@ -52,7 +62,6 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 			"email":    userUpdate.Email,
 			"username": userUpdate.Username,
 			"password": userUpdate.Password,
-			"otp":      userUpdate.OTP,
 			"role":     userUpdate.Role,
 			"status":   userUpdate.Status,
 			"imageUrl": userUpdate.ImageUrl,
@@ -61,9 +70,23 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	return row, err
 }
 
-func UpdatePassword(userId uint, password string) (models.User, error) {
-	row, err := One(`UPDATE users SET password = @password WHERE id = @userId RETURNING *;`,
-		pgx.NamedArgs{"password": password, "userId": userId},
+func UpdateUsername(id uint, username string) (models.User, error) {
+	row, err := One(`UPDATE users SET username = @username WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"username": username, "id": id},
+		&models.User{})
+	return row, err
+}
+
+func UpdateEmail(id uint, email string) (models.User, error) {
+	row, err := One(`UPDATE users SET email = @email WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"email": email, "id": id},
+		&models.User{})
+	return row, err
+}
+
+func UpdatePassword(id uint, password string) (models.User, error) {
+	row, err := One(`UPDATE users SET password = @password WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"password": password, "id": id},
 		&models.User{})
 	return row, err
 }

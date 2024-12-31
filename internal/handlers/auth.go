@@ -8,73 +8,64 @@ import (
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
-	"time"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func VerifyEmail(c *fiber.Ctx) error {
-	// Shape of data in request body
-	type reqBody struct {
-		Email string `json:"email" form:"email"`
-		OTP   string `json:"otp" form:"otp"`
+	// Query params
+	type queryParams struct {
+		Token string `query:"token"`
 	}
-	body := &reqBody{}
+	qParams := &queryParams{}
 
-	// Parse body
-	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing email verification data",
+	// Parse query params
+	if err := c.QueryParser(qParams); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing 'token' query param",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Validate inputs
-	warnings := make([]string, 0, 2)
-	if !validation.IsEmailValid(body.Email) {
-		warnings = append(warnings, "Email is invalid")
+	// Validate JWT
+	token, err := jwt.ParseWithClaims(qParams.Token, &models.JwtVerifyEmail{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return EmailVerificationFailurePage(c, err.Error())
 	}
-	if !validation.IsOtpValid(body.OTP) {
-		warnings = append(warnings, "Verification code is invalid")
+	if !token.Valid {
+		return EmailVerificationFailurePage(c, "The token is invalid")
 	}
-	if len(warnings) > 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
-			"data": map[string]any{"errorMessage": warnings}})
+	payload, ok := token.Claims.(*models.JwtVerifyEmail)
+	if !ok {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The claims in the JWT should be of type *models.JwtVerifyEmail",
+			"data": map[string]any{"errorMessage": "Wrong type for JWT claims"}})
 	}
 
-	// Get user by email
-	user, err := db.GetUserByEmail(body.Email)
+	// Get user
+	user, err := db.GetUserById(payload.UserId)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Make sure user's current status is "unverified" before continuing
-	if user.Status != userstatus.UNVERIFIED {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The user's current status is '" + user.Status + "'",
-			"data": map[string]any{"errorMessage": "This user has already been verified"}})
+	// Determine user status
+	var status string
+	if user.Status == userstatus.SUSPENDED || user.Status == userstatus.DELETED {
+		status = user.Status
+	} else {
+		status = userstatus.VERIFIED
 	}
 
-	// Check if it's been too long since code was emailed
-	expiration := user.CreatedAt.Add(15 * time.Minute)
-	if time.Now().After(expiration) {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The email verification code has expired",
-			"data": map[string]any{"errorMessage": "The email verification code has expired"}})
-	}
-
-	// Check if otp matches
-	if user.OTP != body.OTP {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The email verification code did not match",
-			"data": map[string]any{"errorMessage": "The email verification code did not match"}})
-	}
-
-	// Update user
-	updatedUser, err := db.UpdateUser(user.Id, &models.UserUpdate{
-		Email:    user.Email,
+	// Save to db
+	_, err = db.UpdateUser(payload.UserId, &models.UserUpdate{
+		Email:    payload.Email,
 		Username: user.Username,
 		Password: user.Password,
-		OTP:      "",
 		Role:     user.Role,
-		Status:   userstatus.ACTIVE,
+		Status:   status,
 		ImageUrl: user.ImageUrl,
 	})
 	if err != nil {
@@ -82,12 +73,8 @@ func VerifyEmail(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Serialize user
-	userResponse := serialization.UserResponse(&updatedUser)
-
-	// Send user in response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Email has been verified",
-		"data": map[string]any{"user": userResponse}})
+	// Send to EmailVerificationSuccessPage
+	return EmailVerificationSuccessPage(c)
 }
 
 func ResendEmailVerification(c *fiber.Ctx) error {
@@ -138,7 +125,7 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 	}
 
 	// Resend email verification
-	err = mail.SendEmailCode(body.Email, updatedUser.OTP)
+	err = mail.SendEmailVerification(body.Email, updatedUser.OTP)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when resending the email verification",
 			"data": map[string]any{"errorMessage": err.Error()}})

@@ -9,7 +9,7 @@ import (
 
 func OnlyAdmin(c *fiber.Ctx) error {
 	// Type assert payload
-	payload, ok := c.Locals("jwtPayload").(*models.JwtPayload)
+	payload, ok := c.Locals("jwtPayload").(*models.JwtUser)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
@@ -26,7 +26,7 @@ func OnlyAdmin(c *fiber.Ctx) error {
 
 func OnlyAdminOrOwner(c *fiber.Ctx) error {
 	// Get the user that is requesting access
-	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtPayload)
+	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtUser)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})

@@ -1,11 +1,7 @@
-{{ define "page" }}
+{{ define "page" . }}
 
 <h2 class="verified-heading">&#x26A0; Invalid</h2>
 <p class="thanks-message">Sorry, the link to verify your email address has either expired or is not valid.</p>
-<form action="">
-    <p>If you would like to send another verification link to your email address, please fill out this form and click the button.</p>
-    <input type="email">
-    <button>Send Again</button>
-</form>
+<p>{{ .FailureMessage }}</p>
 
 {{ end }}

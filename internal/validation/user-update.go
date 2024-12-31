@@ -17,16 +17,11 @@ func ValidateUserUpdate(u *models.UserUpdate) []string {
 	if !IsPasswordValid(u.Password) {
 		m = append(m, "Password input is invalid")
 	}
-	if len(u.OTP) > 0 {
-		if !IsOtpValid(u.OTP) {
-			m = append(m, "OTP is invalid")
-		}
-	}
 	if u.Role != userrole.ADMIN &&
 		u.Role != userrole.REGULAR {
 		m = append(m, "User role input is invalid")
 	}
-	if u.Status != userstatus.ACTIVE &&
+	if u.Status != userstatus.VERIFIED &&
 		u.Status != userstatus.DELETED &&
 		u.Status != userstatus.SUSPENDED &&
 		u.Status != userstatus.UNVERIFIED {

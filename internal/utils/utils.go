@@ -12,7 +12,7 @@ import (
 )
 
 func CreateJWT(user *models.User) (string, error) {
-	claims := &models.JwtPayload{
+	claims := &models.JwtUser{
 		UserId:           user.Id,
 		UserRole:         user.Role,
 		UserStatus:       user.Status,
@@ -24,8 +24,8 @@ func CreateJWT(user *models.User) (string, error) {
 }
 
 // https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
-func ParseAndVerifyJWT(tokenString string) (*models.JwtPayload, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &models.JwtPayload{}, func(token *jwt.Token) (interface{}, error) {
+func ParseAndVerifyJWT(tokenString string) (*models.JwtUser, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &models.JwtUser{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("SECRET")), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
@@ -34,7 +34,7 @@ func ParseAndVerifyJWT(tokenString string) (*models.JwtPayload, error) {
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token: %v", token)
 	}
-	payload, ok := token.Claims.(*models.JwtPayload)
+	payload, ok := token.Claims.(*models.JwtUser)
 	if !ok {
 		return nil, fmt.Errorf("payload of JWT is of the incorrect type")
 	}
