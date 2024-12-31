@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/mail"
@@ -9,6 +10,7 @@ import (
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -103,36 +105,33 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Make sure user status is 'unverified' before continuing
-	if user.Status != userstatus.UNVERIFIED {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The user's current status is '" + user.Status + "'",
-			"data": map[string]any{"errorMessage": "This user has already been verified"}})
+	// Create JWT for email verification link
+	claims := &models.JwtVerifyEmail{
+		UserId: user.Id,
+		Email:  body.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
 	}
-
-	// Update user with new OTP
-	updatedUser, err := db.UpdateUser(user.Id, &models.UserUpdate{
-		Email:    user.Email,
-		Username: user.Username,
-		Password: user.Password,
-		OTP:      utils.RandomSixDigitStr(),
-		Role:     user.Role,
-		Status:   user.Status,
-		ImageUrl: user.ImageUrl,
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user in database",
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Resend email verification
-	err = mail.SendEmailVerification(body.Email, updatedUser.OTP)
+	// Create email verification link
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+
+	// Send verification email
+	err = mail.SendEmailVerification(body.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when resending the email verification",
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error sending verification email",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Serialize user
-	userResponse := serialization.UserResponse(&updatedUser)
+	userResponse := serialization.UserResponse(&user)
 
 	// Send user in response
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Another email verification has been sent",
@@ -173,8 +172,8 @@ func Login(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Make sure user status is 'active'
-	if user.Status != userstatus.ACTIVE {
+	// Make sure user status is 'verified'
+	if user.Status != userstatus.VERIFIED {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Cannot login users who have an account status of " + user.Status,
 			"data": map[string]any{"errorMessage": "Cannot login users who have an account status of " + user.Status}})
 	}

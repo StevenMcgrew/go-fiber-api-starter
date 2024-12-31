@@ -343,9 +343,9 @@ func UpdateEmail(c *fiber.Ctx) error {
 	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
 
 	// Send verification email
-	err = mail.SendEmailVerification(user.Email, link)
+	err = mail.SendEmailVerification(body.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification",
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "There was an error sending the email verification",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
