@@ -127,16 +127,16 @@ func GetUser(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
 	}
 
-	// Get the user that is requesting access
-	userRequestingAccess, ok := c.Locals("jwtPayload").(*models.JwtUser)
+	// Type assert jwtUser
+	jwtUser, ok := c.Locals("jwtUser").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error type asserting jwtPayload",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error type asserting jwtUser",
+			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtUser')"}})
 	}
 
 	// Hide email address if not admin or owner
-	isAdmin := (userRequestingAccess.UserRole == userrole.ADMIN)
-	isOwner := (userRequestingAccess.UserId == user.Id)
+	isAdmin := (jwtUser.Role == userrole.ADMIN)
+	isOwner := (jwtUser.Id == user.Id)
 	if !isAdmin && !isOwner {
 		user.Email = "********"
 	}
@@ -252,19 +252,19 @@ func UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	// Type assert payload (the jwt payload should be in c.Locals() from Authn() middleware)
-	payload, ok := c.Locals("jwtPayload").(*models.JwtUser)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
-	}
+	// payload, ok := c.Locals("jwtPayload").(*models.JwtUser)
+	// if !ok {
+	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
+	// 		"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
+	// }
 
 	// Check password, if not admin (this is an extra security check in addition to the middleware checks)
-	if payload.UserRole != userrole.ADMIN {
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
-				"data": map[string]any{"errorMessage": "Password input is incorrect"}})
-		}
-	}
+	// if payload.UserRole != userrole.ADMIN {
+	// 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
+	// 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
+	// 			"data": map[string]any{"errorMessage": "Password input is incorrect"}})
+	// 	}
+	// }
 
 	// Hash new password
 	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
@@ -317,16 +317,17 @@ func UpdateEmail(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Type assert user from c.Locals (The user only has the Id field set from AttachUserId middleware)
-	user, ok := c.Locals("user").(*models.User)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	// Parse userId from path
+	id, err := c.ParamsInt("userId")
+	if err != nil || id == 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
+			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
 	}
+	userId := uint(id)
 
 	// Create JWT for email verification link
 	claims := &models.JwtVerifyEmail{
-		UserId: user.Id,
+		UserId: userId,
 		Email:  body.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
@@ -380,15 +381,16 @@ func UpdateUsername(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
-	// Type assert user from c.Locals (The user only has the Id field set from AttachUserId middleware)
-	user, ok := c.Locals("user").(*models.User)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	// Parse userId from path
+	id, err := c.ParamsInt("userId")
+	if err != nil || id == 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
+			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
 	}
+	userId := uint(id)
 
 	// Save to db
-	updatedUser, err := db.UpdateUsername(user.Id, body.Username)
+	updatedUser, err := db.UpdateUsername(userId, body.Username)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating username in database",
 			"data": map[string]any{"errorMessage": err.Error()}})
@@ -403,21 +405,21 @@ func UpdateUsername(c *fiber.Ctx) error {
 }
 
 func SoftDeleteUser(c *fiber.Ctx) error {
-	// Type assert user (the user should be in c.Locals() from AttachUserId() middleware).
-	// The user only has the Id field set from AttachUserId().
-	user, ok := c.Locals("user").(*models.User)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+	// Parse userId from path
+	id, err := c.ParamsInt("userId")
+	if err != nil || id == 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
+			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
 	}
+	userId := uint(id)
 
 	// Soft delete the user
-	if err := db.SoftDeleteUser(user.Id); err != nil {
+	if err := db.SoftDeleteUser(userId); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error deleting user from database",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Send response
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Deleted user from database",
-		"data": map[string]any{"userId": user.Id}})
+		"data": map[string]any{"userId": userId}})
 }

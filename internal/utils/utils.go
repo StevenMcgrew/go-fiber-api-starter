@@ -14,8 +14,6 @@ import (
 func CreateJWT(user *models.User) (string, error) {
 	claims := &models.JwtUser{
 		UserId:           user.Id,
-		UserRole:         user.Role,
-		UserStatus:       user.Status,
 		RegisteredClaims: jwt.RegisteredClaims{},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

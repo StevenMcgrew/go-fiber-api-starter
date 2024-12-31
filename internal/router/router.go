@@ -48,9 +48,9 @@ func SetupRoutes(app *fiber.App) {
 	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
 	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdmin, hn.UpdateUser)
 	v1.Patch("/users/:userId/password", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdatePassword)
-	v1.Patch("/users/:userId/email", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.UpdateEmail)
-	v1.Patch("/users/:userId/username", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.UpdateUsername)
-	v1.Delete("/users/:userId", mw.Authn, mw.AttachUserId, mw.OnlyAdminOrOwner, hn.SoftDeleteUser)
+	v1.Patch("/users/:userId/email", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateEmail)
+	v1.Patch("/users/:userId/username", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateUsername)
+	v1.Delete("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.SoftDeleteUser)
 
 	// NOTIFICATIONS
 	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.GetAllNotificationsForUser)
