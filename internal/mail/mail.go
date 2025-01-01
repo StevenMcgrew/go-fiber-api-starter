@@ -9,8 +9,25 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-// gomail docs:  https://pkg.go.dev/gopkg.in/gomail.v2#section-readme
+func SendEmailVerification(to string, link string) error {
+	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Welcome!",
+		fmt.Sprintf(EmailVerificationTemplate, link, link))
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func SendPasswordReset(to string, link string) error {
+	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Reset Password",
+		fmt.Sprintf(ResetPasswordTemplate, link, link))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// gomail docs:  https://pkg.go.dev/gopkg.in/gomail.v2#section-readme
 func SendMail(to string, from string, subject string, body string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("To", to)
@@ -29,15 +46,6 @@ func SendMail(to string, from string, subject string, body string) error {
 	d := gomail.NewDialer(host, port, username, password)
 
 	if err := d.DialAndSend(m); err != nil {
-		return err
-	}
-	return nil
-}
-
-func SendEmailVerification(to string, link string) error {
-	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Welcome!",
-		fmt.Sprintf(EmailVerificationTemplate, link, link))
-	if err != nil {
 		return err
 	}
 	return nil

@@ -198,3 +198,132 @@ func Login(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "User has been logged in",
 		"data": map[string]any{"user": userResponse, "token": jwt}})
 }
+
+func ForgotPassword(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Email string `json:"email" form:"email"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate
+	if !validation.IsEmailValid(body.Email) {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Email input is invalid",
+			"data": map[string]any{"errorMessage": "Invalid input"}})
+	}
+
+	// Get user from db
+	user, err := db.GetUserByEmail(body.Email)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user from database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Create JWT for password reset link
+	claims := &models.JwtUser{
+		UserId: user.Id,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for password reset link",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Create password reset link
+	link := fmt.Sprintf("%s/api/v1/auth/reset-password/request?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+
+	// Send email
+	err = mail.SendPasswordReset(body.Email, link)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error sending verification email",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&user)
+
+	// Send user in response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "A password reset link has been emailed",
+		"data": map[string]any{"user": userResponse}})
+}
+
+func ResetForgottenPassword(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Token             string `json:"token" form:"token"`
+		NewPassword       string `json:"newPassword" form:"newPassword"`
+		RepeatNewPassword string `json:"repeatNewPassword" form:"repeatNewPassword"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing request body",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Validate password inputs
+	warnings := make([]string, 0, 2)
+	if !validation.IsPasswordValid(body.NewPassword) {
+		warnings = append(warnings, "NewPassword is invalid")
+	}
+	if body.NewPassword != body.RepeatNewPassword {
+		warnings = append(warnings, "RepeatNewPassword does not match NewPassword")
+	}
+	if len(warnings) > 0 {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more inputs are invalid",
+			"data": map[string]any{"errorMessage": warnings}})
+	}
+
+	// Validate JWT
+	token, err := jwt.ParseWithClaims(body.Token, &models.JwtUser{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing JWT",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+	if !token.Valid {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "JWT is invalid",
+			"data": map[string]any{"errorMessage": "JWT is invalid"}})
+	}
+	jwtUser, ok := token.Claims.(*models.JwtUser)
+	if !ok {
+		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Wrong type for JWT claims",
+			"data": map[string]any{"errorMessage": "Wrong type for JWT claims"}})
+	}
+
+	// Hash new password
+	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Set password
+	hashedPassword := string(pwdBytes)
+
+	// Save to db
+	updatedUser, err := db.UpdatePassword(jwtUser.UserId, hashedPassword)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "fail", "message": "Error updating password in database",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send response
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved password to database",
+		"data": map[string]any{"user": userResponse}})
+}

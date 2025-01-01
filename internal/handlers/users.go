@@ -251,20 +251,20 @@ func UpdatePassword(c *fiber.Ctx) error {
 			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
 	}
 
-	// Type assert payload (the jwt payload should be in c.Locals() from Authn() middleware)
-	// payload, ok := c.Locals("jwtPayload").(*models.JwtUser)
-	// if !ok {
-	// 	return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('jwtPayload') should be of type '*models.JwtPayload'",
-	// 		"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtPayload')"}})
-	// }
+	// Type assert jwtUser (the jwt jwtUser should be in c.Locals() from Authn() middleware)
+	jwtUser, ok := c.Locals("jwtUser").(*models.User)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Wrong type in c.Locals",
+			"data": map[string]any{"errorMessage": "Wrong type in c.Locals"}})
+	}
 
-	// Check password, if not admin (this is an extra security check in addition to the middleware checks)
-	// if payload.UserRole != userrole.ADMIN {
-	// 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
-	// 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
-	// 			"data": map[string]any{"errorMessage": "Password input is incorrect"}})
-	// 	}
-	// }
+	// Check password, if not admin (this is an extra security check)
+	if jwtUser.Role != userrole.ADMIN {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
+			return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
+				"data": map[string]any{"errorMessage": "Password input is incorrect"}})
+		}
+	}
 
 	// Hash new password
 	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
@@ -294,7 +294,7 @@ func UpdatePassword(c *fiber.Ctx) error {
 func UpdateEmail(c *fiber.Ctx) error {
 	// Shape of request body
 	type reqBody struct {
-		Email string
+		Email string `json:"email" form:"email"`
 	}
 	body := &reqBody{}
 

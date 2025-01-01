@@ -37,6 +37,30 @@ func EmailVerificationFailurePage(c *fiber.Ctx, failureMessage string) error {
 	return renderAndSendHTML(c, data, filenames)
 }
 
+func ResetPasswordPage(c *fiber.Ctx) error {
+	// Query params
+	type queryParams struct {
+		Token string `query:"token"`
+	}
+	qParams := &queryParams{}
+
+	// Parse query params
+	if err := c.QueryParser(qParams); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing 'token' query param",
+			"data": map[string]any{"errorMessage": err.Error()}})
+	}
+
+	data := struct {
+		ShowLogin bool
+		Token     string
+	}{
+		ShowLogin: false,
+		Token:     qParams.Token,
+	}
+	filenames := []string{"root-layout", "header", "password-reset"}
+	return renderAndSendHTML(c, data, filenames)
+}
+
 func renderAndSendHTML(c *fiber.Ctx, data any, filenames []string) error {
 	// Get views directory
 	wd, err := os.Getwd()
