@@ -8,6 +8,7 @@ import (
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/serialization"
+	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
 	"os"
 	"time"
@@ -21,8 +22,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// Parse
 	userSignUp := &models.UserSignUp{}
 	if err := c.BodyParser(userSignUp); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing Sign Up data",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate
@@ -110,9 +110,8 @@ func CreateUser(c *fiber.Ctx) error {
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
-	// Respond with 201 and user data
-	return c.Status(201).JSON(fiber.Map{"status": "success", "message": "Successfully saved new user",
-		"data": map[string]any{"user": userResponse}})
+	// Create JSON response and send
+	return utils.SendSuccessJSON(c, 201, userResponse, "Saved new user")
 }
 
 func GetAllUsers(c *fiber.Ctx) error {

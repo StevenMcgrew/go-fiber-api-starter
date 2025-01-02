@@ -125,19 +125,6 @@ func ServerErrorHandler(c *fiber.Ctx, err error) error {
 		"message": fiberErr.Message,
 		"error":   fiberErr.Error(),
 		"data":    map[string]any{},
-		"pagination": map[string]any{
-			"page":       0,
-			"perPage":    0,
-			"totalPages": 0,
-			"totalCount": 0,
-			"links": map[string]any{
-				"self":     "",
-				"first":    "",
-				"previous": "",
-				"next":     "",
-				"last":     "",
-			},
-		},
 	})
 	if sendJsonErr != nil {
 		return c.Status(500).SendString("Internal Server Error: " + fiberErr.Error())

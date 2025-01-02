@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -37,6 +38,39 @@ func ParseAndVerifyJWT(tokenString string) (*models.JwtUser, error) {
 		return nil, fmt.Errorf("payload of JWT is of the incorrect type")
 	}
 	return payload, nil
+}
+
+func SendSuccessJSON(c *fiber.Ctx, code int, data any, msg string) error {
+	return c.Status(code).JSON(fiber.Map{
+		"status":  "success",
+		"code":    code,
+		"message": msg,
+		"error":   "",
+		"data":    data,
+	})
+}
+
+func SendPaginationJSON(c *fiber.Ctx, data any, pagination *models.Pagination, msg string) error {
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"code":    200,
+		"message": msg,
+		"error":   "",
+		"data":    data,
+		"pagination": map[string]any{
+			"page":       pagination.Page,
+			"perPage":    pagination.PerPage,
+			"totalPages": pagination.TotalPages,
+			"totalCount": pagination.TotalCount,
+			"links": map[string]any{
+				"self":     pagination.SelfLink,
+				"first":    pagination.FirstLink,
+				"previous": pagination.PreviousLink,
+				"next":     pagination.NextLink,
+				"last":     pagination.LastLink,
+			},
+		},
+	})
 }
 
 func RandomSixDigitStr() string {
