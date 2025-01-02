@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/router"
 
@@ -20,7 +21,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	app := fiber.New()
+	app := fiber.New(config.FiberServerConfig)
 
 	db.Connect(os.Getenv("DB_URL"))
 	db.ExecuteSqlFile("./internal/db/create-db.sql")

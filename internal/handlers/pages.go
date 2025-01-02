@@ -61,6 +61,22 @@ func ResetPasswordPage(c *fiber.Ctx) error {
 	return renderAndSendHTML(c, data, filenames)
 }
 
+func ErrorPage(c *fiber.Ctx, err *fiber.Error) error {
+	data := struct {
+		ShowLogin    bool
+		StatusCode   int
+		ErrorMessage string
+		ErrorDetails string
+	}{
+		ShowLogin:    false,
+		StatusCode:   err.Code,
+		ErrorMessage: err.Message,
+		ErrorDetails: err.Error(),
+	}
+	filenames := []string{"root-layout", "header", "error"}
+	return renderAndSendHTML(c, data, filenames)
+}
+
 func renderAndSendHTML(c *fiber.Ctx, data any, filenames []string) error {
 	// Get views directory
 	wd, err := os.Getwd()
