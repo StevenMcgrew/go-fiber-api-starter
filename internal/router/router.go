@@ -47,8 +47,10 @@ func SetupRoutes(app *fiber.App) {
 
 	// USERS
 	v1.Post("/users/", hn.CreateUser)
-	v1.Get("/users/:userId", mw.Authn, mw.AttachUser, hn.GetUser)
+	v1.Get("/users/:userId", mw.AttachUser, hn.GetUser)
 	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
+	v1.Post("/users/email/availability", hn.IsEmailAvailable)
+	v1.Post("/users/username/availability", hn.IsUsernameAvailable)
 	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdmin, hn.UpdateUser)
 	v1.Patch("/users/:userId/password", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdatePassword)
 	v1.Patch("/users/:userId/email", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateEmail)

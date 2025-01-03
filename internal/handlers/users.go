@@ -125,6 +125,60 @@ func GetUser(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 200, userResponse, "Retrieved user from database")
 }
 
+func IsEmailAvailable(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Email string `json:"email" form:"email"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
+	}
+
+	// Validate
+	if !validation.IsEmailValid(body.Email) {
+		return fiber.NewError(400, "Email is invalid")
+	}
+
+	// Check availability and respond
+	if err := db.CheckEmailAvailability(body.Email); err != nil {
+		if err.Error() == "email address is already in use by another user" {
+			return utils.SendSuccessJSON(c, 200, false, err.Error())
+		}
+		return fiber.NewError(500, "Error looking up email in database: "+err.Error())
+	}
+	return utils.SendSuccessJSON(c, 200, true, "email address is available")
+}
+
+func IsUsernameAvailable(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Username string `json:"username" form:"username"`
+	}
+	body := &reqBody{}
+
+	// Parse
+	if err := c.BodyParser(body); err != nil {
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
+	}
+
+	// Validate
+	if !validation.IsUsernameValid(body.Username) {
+		return fiber.NewError(400, "Username is invalid")
+	}
+
+	// Check availability and respond
+	if err := db.CheckUsernameAvailability(body.Username); err != nil {
+		if err.Error() == "username is already in use by another user" {
+			return utils.SendSuccessJSON(c, 200, false, err.Error())
+		}
+		return fiber.NewError(500, "Error looking up username in database: "+err.Error())
+	}
+	return utils.SendSuccessJSON(c, 200, true, "username is available")
+}
+
 func UpdateUser(c *fiber.Ctx) error {
 	// Parse
 	userUpdate := &models.UserUpdate{}
@@ -296,8 +350,7 @@ func UpdateEmail(c *fiber.Ctx) error {
 	}
 
 	// Send response
-	d := map[string]any{}
-	return utils.SendSuccessJSON(c, 200, d, "A verification link has been emailed to "+body.Email)
+	return utils.SendSuccessJSON(c, 200, nil, "A verification link has been emailed to "+body.Email)
 }
 
 func UpdateUsername(c *fiber.Ctx) error {
@@ -357,5 +410,5 @@ func SoftDeleteUser(c *fiber.Ctx) error {
 	}
 
 	// Send response
-	return utils.SendSuccessJSON(c, 200, map[string]any{}, "Deleted user from database")
+	return utils.SendSuccessJSON(c, 200, nil, "Deleted user from database")
 }

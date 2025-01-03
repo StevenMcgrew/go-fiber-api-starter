@@ -185,7 +185,7 @@ func ServerErrorHandler(c *fiber.Ctx, err error) error {
 		"code":    fiberErr.Code,
 		"message": fiberErr.Message,
 		"error":   fiberErr.Error(),
-		"data":    map[string]any{},
+		"data":    nil,
 	})
 	if sendJsonErr != nil {
 		return c.Status(500).SendString("Internal Server Error: " + fiberErr.Error())
