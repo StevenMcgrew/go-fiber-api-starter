@@ -10,6 +10,7 @@ import (
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,8 +27,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Parse query params
 	if err := c.QueryParser(qParams); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing 'token' query param",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing query parameter: "+err.Error())
 	}
 
 	// Validate JWT
@@ -35,22 +35,20 @@ func VerifyEmail(c *fiber.Ctx) error {
 		return []byte(config.API_SECRET), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
-		return EmailVerificationFailurePage(c, err.Error())
+		return FailedToVerifyEmailPage(c, err.Error())
 	}
 	if !token.Valid {
-		return EmailVerificationFailurePage(c, "The token is invalid")
+		return FailedToVerifyEmailPage(c, "The token is invalid")
 	}
 	payload, ok := token.Claims.(*models.JwtVerifyEmail)
 	if !ok {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "The claims in the JWT should be of type *models.JwtVerifyEmail",
-			"data": map[string]any{"errorMessage": "Wrong type for JWT claims"}})
+		return fiber.NewError(400, "Type assertion failed for token claims")
 	}
 
 	// Get user
 	user, err := db.GetUserById(payload.UserId)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Determine user status
@@ -65,18 +63,16 @@ func VerifyEmail(c *fiber.Ctx) error {
 	_, err = db.UpdateUser(payload.UserId, &models.UserUpdate{
 		Email:    payload.Email,
 		Username: user.Username,
-		Password: user.Password,
 		Role:     user.Role,
 		Status:   status,
 		ImageUrl: user.ImageUrl,
 	})
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when updating user in database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error updating user in database: "+err.Error())
 	}
 
 	// Send to EmailVerificationSuccessPage
-	return EmailVerificationSuccessPage(c)
+	return SuccessfullyVerifiedEmailPage(c)
 }
 
 func ResendEmailVerification(c *fiber.Ctx) error {
@@ -88,21 +84,18 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing email address from request body",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate input
 	if !validation.IsEmailValid(body.Email) {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Email address is invalid",
-			"data": map[string]any{"errorMessage": "Email address is invalid"}})
+		return fiber.NewError(400, "Email address is invalid")
 	}
 
 	// Get user by email
 	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Create JWT for email verification link
@@ -116,8 +109,7 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error creating JWT: "+err.Error())
 	}
 
 	// Create email verification link
@@ -126,16 +118,14 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 	// Send verification email
 	err = mail.SendEmailVerification(body.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error sending verification email",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error sending email: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
 	// Send user in response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Another email verification has been sent",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "A verification email has been sent")
 }
 
 func Login(c *fiber.Ctx) error {
@@ -148,8 +138,7 @@ func Login(c *fiber.Ctx) error {
 
 	// Parse body
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate inputs
@@ -161,42 +150,42 @@ func Login(c *fiber.Ctx) error {
 		isValid = false
 	}
 	if !isValid {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are invalid",
-			"data": map[string]any{"errorMessage": "Login credentials are invalid"}})
+		return fiber.NewError(400, "Login credentials are invalid")
 	}
 
 	// Get user by email
 	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Make sure user status is 'verified'
 	if user.Status != userstatus.VERIFIED {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Cannot login users who have an account status of " + user.Status,
-			"data": map[string]any{"errorMessage": "Cannot login users who have an account status of " + user.Status}})
+		return fiber.NewError(400, "Cannot login users who have an account status of "+user.Status)
 	}
 
 	// Check password
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Login credentials are incorrect",
-			"data": map[string]any{"errorMessage": "Login credentials are incorrect"}})
+		return fiber.NewError(400, "Login credentials are incorrect")
 	}
 
 	// Create JWT
 	jwt, err := utils.CreateJWT(&user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when creating a JWT",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error creating JWT: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
+	// Create UserLoginResponse
+	userLoginResponse := &models.UserLoginResponse{
+		Token:        jwt,
+		UserResponse: *userResponse,
+	}
+
 	// Send user and jwt
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "User has been logged in",
-		"data": map[string]any{"user": userResponse, "token": jwt}})
+	return utils.SendSuccessJSON(c, 200, userLoginResponse, "Auth token created for user")
 }
 
 func ForgotPassword(c *fiber.Ctx) error {
@@ -208,21 +197,18 @@ func ForgotPassword(c *fiber.Ctx) error {
 
 	// Parse
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing login credentials",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate
 	if !validation.IsEmailValid(body.Email) {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Email input is invalid",
-			"data": map[string]any{"errorMessage": "Invalid input"}})
+		return fiber.NewError(400, "Email input is invalid")
 	}
 
 	// Get user from db
 	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Create JWT for password reset link
@@ -235,8 +221,7 @@ func ForgotPassword(c *fiber.Ctx) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for password reset link",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error creating JWT: "+err.Error())
 	}
 
 	// Create password reset link
@@ -245,16 +230,14 @@ func ForgotPassword(c *fiber.Ctx) error {
 	// Send email
 	err = mail.SendPasswordReset(body.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error sending verification email",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error emailing password reset: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
 	// Send user in response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "A password reset link has been emailed",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "A password reset link has been emailed")
 }
 
 func ResetForgottenPassword(c *fiber.Ctx) error {
@@ -268,8 +251,7 @@ func ResetForgottenPassword(c *fiber.Ctx) error {
 
 	// Parse
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing request body",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate password inputs
@@ -281,8 +263,7 @@ func ResetForgottenPassword(c *fiber.Ctx) error {
 		warnings = append(warnings, "RepeatNewPassword does not match NewPassword")
 	}
 	if len(warnings) > 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more inputs are invalid",
-			"data": map[string]any{"errorMessage": warnings}})
+		return fiber.NewError(400, strings.Join(warnings, " "))
 	}
 
 	// Validate JWT
@@ -290,24 +271,20 @@ func ResetForgottenPassword(c *fiber.Ctx) error {
 		return []byte(config.API_SECRET), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing JWT",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error parsing JWT: "+err.Error())
 	}
 	if !token.Valid {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "JWT is invalid",
-			"data": map[string]any{"errorMessage": "JWT is invalid"}})
+		return fiber.NewError(400, "JWT is invalid")
 	}
 	jwtUser, ok := token.Claims.(*models.JwtUser)
 	if !ok {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Wrong type for JWT claims",
-			"data": map[string]any{"errorMessage": "Wrong type for JWT claims"}})
+		return fiber.NewError(400, "Type assertion failed for token claims")
 	}
 
 	// Hash new password
 	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error hashing password: "+err.Error())
 	}
 
 	// Set password
@@ -316,14 +293,12 @@ func ResetForgottenPassword(c *fiber.Ctx) error {
 	// Save to db
 	updatedUser, err := db.UpdatePassword(jwtUser.UserId, hashedPassword)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "fail", "message": "Error updating password in database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error updating password in database: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&updatedUser)
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved password to database",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "Saved password to database")
 }

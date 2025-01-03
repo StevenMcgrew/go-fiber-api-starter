@@ -53,7 +53,6 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	row, err := One(`UPDATE users
 					 SET email = @email,
 						 username = @username,
-						 password = @password,
 						 role = @role,
 						 status = @status,
 						 image_url = @imageUrl
@@ -61,7 +60,6 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 		pgx.NamedArgs{
 			"email":    userUpdate.Email,
 			"username": userUpdate.Username,
-			"password": userUpdate.Password,
 			"role":     userUpdate.Role,
 			"status":   userUpdate.Status,
 			"imageUrl": userUpdate.ImageUrl,
@@ -109,32 +107,32 @@ func HardDeleteUser(id uint) error {
 	return nil
 }
 
-func IsEmailAvailable(email string) (bool, error) {
+func CheckEmailAvailability(email string) error {
 	_, err := GetUserByEmail(email)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			// some error other than ErrNoRows
-			return false, err
+			return err
 		}
 		// user not found (email is available)
-		return true, nil
+		return nil
 	} else {
 		// user found (email is NOT available)
-		return false, fmt.Errorf("email address is already in use by another user")
+		return fmt.Errorf("email address is already in use by another user")
 	}
 }
 
-func IsUsernameAvailable(username string) (bool, error) {
+func CheckUsernameAvailability(username string) error {
 	_, err := GetUserByUsername(username)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			// some error other than ErrNoRows
-			return false, err
+			return err
 		}
 		// user not found (username is available)
-		return true, nil
+		return nil
 	} else {
 		// user found (username is NOT available)
-		return false, fmt.Errorf("username is already in use by another user")
+		return fmt.Errorf("username is already in use by another user")
 	}
 }

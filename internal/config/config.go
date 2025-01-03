@@ -155,7 +155,7 @@ func ServerErrorHandler(c *fiber.Ctx, err error) error {
 		// Get views directory
 		wd, err := os.Getwd()
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting working directory", "data": err.Error()})
+			return c.Status(500).SendString("Internal Server Error: " + err.Error())
 		}
 		viewsDir := wd + "/internal/views"
 		// Get template file paths
@@ -166,10 +166,10 @@ func ServerErrorHandler(c *fiber.Ctx, err error) error {
 		// Render and send
 		tmpl, err := template.ParseFiles(paths...)
 		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error while parsing HTML templates", "data": err.Error()})
+			return c.Status(500).SendString("Internal Server Error: " + err.Error())
 		}
 		if tmpl == nil {
-			return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Parsing html templates produced a nil template", "data": ""})
+			return c.Status(500).SendString("Internal Server Error: nil template")
 		}
 		c.Set("Content-Type", "text/html")
 		err = tmpl.Execute(c.Response().BodyWriter(), data)

@@ -10,16 +10,14 @@ func AttachUser(c *fiber.Ctx) error {
 	// Parse userId from path
 	id, err := c.ParamsInt("userId")
 	if err != nil || id == 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
-			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
+		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
 	}
 	userId := uint(id)
 
 	// Get user
 	user, err := db.GetUserById(userId)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Add user to c.Locals()

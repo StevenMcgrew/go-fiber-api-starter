@@ -32,13 +32,13 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
-	_, err := db.IsEmailAvailable(userSignUp.Email)
+	err := db.CheckEmailAvailability(userSignUp.Email)
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
 
 	// Check if username is already taken
-	_, err = db.IsUsernameAvailable(userSignUp.Username)
+	err = db.CheckUsernameAvailability(userSignUp.Username)
 	if err != nil {
 		return fiber.NewError(400, err.Error())
 	}
@@ -102,15 +102,13 @@ func GetUser(c *fiber.Ctx) error {
 	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
 	user, ok := c.Locals("user").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
 	// Type assert jwtUser
 	jwtUser, ok := c.Locals("jwtUser").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error type asserting jwtUser",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('jwtUser')"}})
+		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
 	}
 
 	// Hide email address if not admin or owner
@@ -124,72 +122,54 @@ func GetUser(c *fiber.Ctx) error {
 	userResponse := serialization.UserResponse(user)
 
 	// Send user
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Retrieved user from database",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "Retrieved user from database")
 }
 
 func UpdateUser(c *fiber.Ctx) error {
 	// Parse
 	userUpdate := &models.UserUpdate{}
 	if err := c.BodyParser(userUpdate); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing request body",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, `Error parsing request body: `+err.Error())
 	}
 
 	// Validate
 	if warnings := validation.ValidateUserUpdate(userUpdate); warnings != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
-			"data": map[string]any{"errorMessage": warnings}})
+		return fiber.NewError(400, strings.Join(warnings, " "))
 	}
 
 	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
 	user, ok := c.Locals("user").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
 	// Check email availability, if new email
 	if userUpdate.Email != user.Email {
-		msg, err := db.IsEmailAvailable(userUpdate.Email)
+		err := db.CheckEmailAvailability(userUpdate.Email)
 		if err != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-				"data": map[string]any{"errorMessage": err.Error()}})
+			return fiber.NewError(400, err.Error())
 		}
 	}
 
 	// Check username availability, if new username
 	if userUpdate.Username != user.Username {
-		msg, err := db.IsUsernameAvailable(userUpdate.Username)
+		err := db.CheckUsernameAvailability(userUpdate.Username)
 		if err != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-				"data": map[string]any{"errorMessage": err.Error()}})
+			return fiber.NewError(400, err.Error())
 		}
 	}
-
-	// Hash password
-	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(userUpdate.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
-			"data": map[string]any{"errorMessage": err.Error()}})
-	}
-
-	// Set password
-	userUpdate.Password = string(pwdBytes)
 
 	// Save to db
 	updatedUser, err := db.UpdateUser(user.Id, userUpdate)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating user in database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error updating user in database: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&updatedUser)
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved updated user to database",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "Updated user in database")
 }
 
 func UpdatePassword(c *fiber.Ctx) error {
@@ -203,53 +183,47 @@ func UpdatePassword(c *fiber.Ctx) error {
 
 	// Parse
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing password data",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate inputs
 	warnings := make([]string, 0, 3)
 	if !validation.IsPasswordValid(body.CurrentPassword) {
-		warnings = append(warnings, "Current password is invalid")
+		warnings = append(warnings, "Current password is invalid.")
 	}
 	if !validation.IsPasswordValid(body.NewPassword) {
-		warnings = append(warnings, "New password is invalid")
+		warnings = append(warnings, "New password is invalid.")
 	}
 	if body.NewPassword != body.RepeatNewPassword {
-		warnings = append(warnings, "NewPassword and RepeatNewPassword do not match")
+		warnings = append(warnings, "NewPassword and RepeatNewPassword do not match.")
 	}
 	if len(warnings) > 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
-			"data": map[string]any{"errorMessage": warnings}})
+		return fiber.NewError(400, strings.Join(warnings, " "))
 	}
 
 	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
 	user, ok := c.Locals("user").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "c.Locals('user') should be of type '*models.User'",
-			"data": map[string]any{"errorMessage": "Incorrect type for c.Locals('user')"}})
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
 	// Type assert jwtUser (the jwt jwtUser should be in c.Locals() from Authn() middleware)
 	jwtUser, ok := c.Locals("jwtUser").(*models.User)
 	if !ok {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Wrong type in c.Locals",
-			"data": map[string]any{"errorMessage": "Wrong type in c.Locals"}})
+		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
 	}
 
 	// Check password, if not admin (this is an extra security check)
 	if jwtUser.Role != userrole.ADMIN {
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
-			return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Only admin or a user with a correct password are allowed to change passwords",
-				"data": map[string]any{"errorMessage": "Password input is incorrect"}})
+			return fiber.NewError(500, "CurrentPassword input doesn't match saved password")
 		}
 	}
 
 	// Hash new password
 	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error hashing password: "+err.Error())
 	}
 
 	// Set password
@@ -258,16 +232,14 @@ func UpdatePassword(c *fiber.Ctx) error {
 	// Save to db
 	updatedUser, err := db.UpdatePassword(user.Id, hashedPassword)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating password in database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error updating password in database: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&updatedUser)
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved password to database",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "Saved password to database")
 }
 
 func UpdateEmail(c *fiber.Ctx) error {
@@ -279,28 +251,24 @@ func UpdateEmail(c *fiber.Ctx) error {
 
 	// Parse
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing email data",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate
 	if !validation.IsEmailValid(body.Email) {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Username input is invalid",
-			"data": map[string]any{"errorMessage": "Invalid input"}})
+		return fiber.NewError(500, "Email input is invalid")
 	}
 
 	// Check if email is already taken
-	msg, err := db.IsEmailAvailable(body.Email)
+	err := db.CheckEmailAvailability(body.Email)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, err.Error())
 	}
 
 	// Parse userId from path
 	id, err := c.ParamsInt("userId")
 	if err != nil || id == 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
-			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
+		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
 	}
 	userId := uint(id)
 
@@ -315,8 +283,7 @@ func UpdateEmail(c *fiber.Ctx) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error creating JWT: "+err.Error())
 	}
 
 	// Create email verification link
@@ -325,13 +292,12 @@ func UpdateEmail(c *fiber.Ctx) error {
 	// Send verification email
 	err = mail.SendEmailVerification(body.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "There was an error sending the email verification",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error sending email: "+err.Error())
 	}
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success",
-		"message": fmt.Sprintf("A verification link has been emailed to %s", body.Email), "data": ""})
+	d := map[string]any{}
+	return utils.SendSuccessJSON(c, 200, d, "A verification link has been emailed to "+body.Email)
 }
 
 func UpdateUsername(c *fiber.Ctx) error {
@@ -343,62 +309,53 @@ func UpdateUsername(c *fiber.Ctx) error {
 
 	// Parse
 	if err := c.BodyParser(body); err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing username data",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
 
 	// Validate
 	if !validation.IsUsernameValid(body.Username) {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Username input is invalid",
-			"data": map[string]any{"errorMessage": "Invalid input"}})
+		return fiber.NewError(400, "Username is invalid")
 	}
 
 	// Check if username is already taken
-	msg, err := db.IsUsernameAvailable(body.Username)
+	err := db.CheckUsernameAvailability(body.Username)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, err.Error())
 	}
 
 	// Parse userId from path
 	id, err := c.ParamsInt("userId")
 	if err != nil || id == 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
-			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
+		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
 	}
 	userId := uint(id)
 
 	// Save to db
 	updatedUser, err := db.UpdateUsername(userId, body.Username)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error updating username in database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error updating username in database: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&updatedUser)
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Saved username to database",
-		"data": map[string]any{"user": userResponse}})
+	return utils.SendSuccessJSON(c, 200, userResponse, "Saved username to database")
 }
 
 func SoftDeleteUser(c *fiber.Ctx) error {
 	// Parse userId from path
 	id, err := c.ParamsInt("userId")
 	if err != nil || id == 0 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing userId from URL",
-			"data": map[string]any{"errorMessage": "Error parsing userId from URL"}})
+		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
 	}
 	userId := uint(id)
 
 	// Soft delete the user
 	if err := db.SoftDeleteUser(userId); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error deleting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error deleting user from database: "+err.Error())
 	}
 
 	// Send response
-	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "Deleted user from database",
-		"data": map[string]any{"userId": userId}})
+	return utils.SendSuccessJSON(c, 200, map[string]any{}, "Deleted user from database")
 }

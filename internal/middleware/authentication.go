@@ -12,8 +12,7 @@ func Authn(c *fiber.Ctx) error {
 	// Get JWT from header
 	authHeader := c.Get("Authorization")
 	if len(authHeader) < 7 {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "An Authorization header is required to be set for this path",
-			"data": map[string]any{"errorMessage": "No value found for Authorization header"}})
+		return fiber.NewError(400, "Authorization header is required")
 	}
 	bearerPrefix := "Bearer "
 	tokenString := authHeader[len(bearerPrefix):]
@@ -21,15 +20,13 @@ func Authn(c *fiber.Ctx) error {
 	// Validate JWT
 	payload, err := utils.ParseAndVerifyJWT(tokenString)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"status": "fail", "message": "Invalid token. Access denied.",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(401, "Access denied: "+err.Error())
 	}
 
 	// Get the user that is requesting access
 	jwtUser, err := db.GetUserById(payload.UserId)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error getting user from database",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
 	// Add jwtUser to c.Locals()

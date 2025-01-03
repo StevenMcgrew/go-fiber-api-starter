@@ -14,7 +14,7 @@ func HomePage(c *fiber.Ctx) error {
 	return renderAndSendHTML(c, data, filenames)
 }
 
-func EmailVerificationSuccessPage(c *fiber.Ctx) error {
+func SuccessfullyVerifiedEmailPage(c *fiber.Ctx) error {
 	data := struct {
 		ShowLogin bool
 	}{
@@ -24,7 +24,7 @@ func EmailVerificationSuccessPage(c *fiber.Ctx) error {
 	return renderAndSendHTML(c, data, filenames)
 }
 
-func EmailVerificationFailurePage(c *fiber.Ctx, failureMessage string) error {
+func FailedToVerifyEmailPage(c *fiber.Ctx, failureMessage string) error {
 	data := struct {
 		ShowLogin      bool
 		FailureMessage string
@@ -46,8 +46,7 @@ func ResetPasswordPage(c *fiber.Ctx) error {
 
 	// Parse query params
 	if err := c.QueryParser(qParams); err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error parsing 'token' query param",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, "Error parsing query parameter: "+err.Error())
 	}
 
 	data := struct {
@@ -65,26 +64,29 @@ func renderAndSendHTML(c *fiber.Ctx, data any, filenames []string) error {
 	// Get views directory
 	wd, err := os.Getwd()
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when getting working directory", "data": err.Error()})
+		return fiber.NewError(500, "Error when getting working directory: "+err.Error())
 	}
 	viewsDir := wd + "/internal/views"
+
 	// Get template file paths
 	paths := make([]string, 0, len(filenames))
 	for _, filename := range filenames {
 		paths = append(paths, filepath.Join(viewsDir, filename+".html"))
 	}
-	// Render and send
+
+	// Create template
 	tmpl, err := template.ParseFiles(paths...)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error while parsing HTML templates", "data": err.Error()})
+	if err != nil || tmpl == nil {
+		return fiber.NewError(500, "Error creating HTML template: "+err.Error())
 	}
-	if tmpl == nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Parsing html templates produced a nil template", "data": ""})
-	}
+
+	// Set Content-Type
 	c.Set("Content-Type", "text/html")
+
+	// Render and send
 	err = tmpl.Execute(c.Response().BodyWriter(), data)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error while rendering HTML templates", "data": err.Error()})
+		return fiber.NewError(500, "Error rendering and sending HTML template: "+err.Error())
 	}
 	return nil
 }
