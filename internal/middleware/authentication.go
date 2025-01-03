@@ -24,13 +24,13 @@ func Authn(c *fiber.Ctx) error {
 	}
 
 	// Get the user that is requesting access
-	jwtUser, err := db.GetUserById(payload.UserId)
+	inquirer, err := db.GetUserById(payload.UserId)
 	if err != nil {
 		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
-	// Add jwtUser to c.Locals()
-	c.Locals("jwtUser", &jwtUser)
+	// Add inquirer to c.Locals()
+	c.Locals("inquirer", &inquirer)
 
 	return c.Next()
 }

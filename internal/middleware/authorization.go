@@ -8,14 +8,14 @@ import (
 )
 
 func OnlyAdmin(c *fiber.Ctx) error {
-	// Type assert jwtUser
-	jwtUser, ok := c.Locals("jwtUser").(*models.User)
+	// Type assert inquirer
+	inquirer, ok := c.Locals("inquirer").(*models.User)
 	if !ok {
-		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
+		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
 	}
 
 	// Only allow admin
-	if jwtUser.Role == userrole.ADMIN {
+	if inquirer.Role == userrole.ADMIN {
 		return c.Next()
 	} else {
 		return fiber.NewError(403, "The user does not have permission to access this resource")
@@ -24,9 +24,9 @@ func OnlyAdmin(c *fiber.Ctx) error {
 
 func OnlyAdminOrOwner(c *fiber.Ctx) error {
 	// Get the user that is requesting access
-	jwtUser, ok := c.Locals("jwtUser").(*models.User)
+	inquirer, ok := c.Locals("inquirer").(*models.User)
 	if !ok {
-		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
+		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
 	}
 
 	// Get the user to be accessed
@@ -36,8 +36,8 @@ func OnlyAdminOrOwner(c *fiber.Ctx) error {
 	}
 
 	// Only allow admin or owner
-	isAdmin := (jwtUser.Role == userrole.ADMIN)
-	isOwner := (jwtUser.Id == user.Id)
+	isAdmin := (inquirer.Role == userrole.ADMIN)
+	isOwner := (inquirer.Id == user.Id)
 	if isAdmin || isOwner {
 		return c.Next()
 	} else {

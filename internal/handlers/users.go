@@ -105,15 +105,15 @@ func GetUser(c *fiber.Ctx) error {
 		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
-	// Type assert jwtUser
-	jwtUser, ok := c.Locals("jwtUser").(*models.User)
+	// Type assert user that is requesting access (should be in c.Locals() from Authn() middleware)
+	inquirer, ok := c.Locals("inquirer").(*models.User)
 	if !ok {
-		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
+		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
 	}
 
 	// Hide email address if not admin or owner
-	isAdmin := (jwtUser.Role == userrole.ADMIN)
-	isOwner := (jwtUser.Id == user.Id)
+	isAdmin := (inquirer.Role == userrole.ADMIN)
+	isOwner := (inquirer.Id == user.Id)
 	if !isAdmin && !isOwner {
 		user.Email = "********"
 	}
@@ -207,14 +207,14 @@ func UpdatePassword(c *fiber.Ctx) error {
 		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
-	// Type assert jwtUser (the jwt jwtUser should be in c.Locals() from Authn() middleware)
-	jwtUser, ok := c.Locals("jwtUser").(*models.User)
+	// Type assert user that is requesting access (should be in c.Locals() from Authn() middleware)
+	inquirer, ok := c.Locals("inquirer").(*models.User)
 	if !ok {
-		return fiber.NewError(500, `Type assertion failed for c.Locals("jwtUser")`)
+		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
 	}
 
 	// Check password, if not admin (this is an extra security check)
-	if jwtUser.Role != userrole.ADMIN {
+	if inquirer.Role != userrole.ADMIN {
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
 			return fiber.NewError(500, "CurrentPassword input doesn't match saved password")
 		}
