@@ -109,32 +109,32 @@ func HardDeleteUser(id uint) error {
 	return nil
 }
 
-func CheckEmailAvailability(email string) (string, error) {
+func IsEmailAvailable(email string) (bool, error) {
 	_, err := GetUserByEmail(email)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			// some error other than ErrNoRows
-			return "Server error on email lookup", err
+			return false, err
 		}
 		// user not found (email is available)
-		return "Email is available", nil
+		return true, nil
 	} else {
 		// user found (email is NOT available)
-		return "Email address is already in use by another user", fmt.Errorf("Email address is already in use by another user")
+		return false, fmt.Errorf("email address is already in use by another user")
 	}
 }
 
-func CheckUsernameAvailability(username string) (string, error) {
+func IsUsernameAvailable(username string) (bool, error) {
 	_, err := GetUserByUsername(username)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			// some error other than ErrNoRows
-			return "Server error on username lookup", err
+			return false, err
 		}
 		// user not found (username is available)
-		return "Username is available", nil
+		return true, nil
 	} else {
 		// user found (username is NOT available)
-		return "Username is already in use by another user", fmt.Errorf("username is already in use by another user")
+		return false, fmt.Errorf("username is already in use by another user")
 	}
 }

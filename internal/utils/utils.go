@@ -2,9 +2,9 @@ package utils
 
 import (
 	"fmt"
+	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/models"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -14,18 +14,20 @@ import (
 
 func CreateJWT(user *models.User) (string, error) {
 	claims := &models.JwtUser{
-		UserId:           user.Id,
-		RegisteredClaims: jwt.RegisteredClaims{},
+		UserId: user.Id,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := []byte(os.Getenv("SECRET"))
+	secret := []byte(config.API_SECRET)
 	return token.SignedString(secret)
 }
 
 // https://pkg.go.dev/github.com/golang-jwt/jwt/v5#Parse
 func ParseAndVerifyJWT(tokenString string) (*models.JwtUser, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &models.JwtUser{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SECRET")), nil
+		return []byte(config.API_SECRET), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		return nil, fmt.Errorf("JWT parse error: %v", err.Error())

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userrole"
 	"go-fiber-api-starter/internal/enums/userstatus"
@@ -10,7 +11,7 @@ import (
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
-	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -27,29 +28,25 @@ func CreateUser(c *fiber.Ctx) error {
 
 	// Validate
 	if warnings := validation.ValidateUserSignUp(userSignUp); warnings != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "One or more invalid inputs",
-			"data": map[string]any{"errorMessage": warnings}})
+		return fiber.NewError(400, strings.Join(warnings, " "))
 	}
 
 	// Check if email is already taken
-	msg, err := db.CheckEmailAvailability(userSignUp.Email)
+	_, err := db.IsEmailAvailable(userSignUp.Email)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, err.Error())
 	}
 
 	// Check if username is already taken
-	msg, err = db.CheckUsernameAvailability(userSignUp.Username)
+	_, err = db.IsUsernameAvailable(userSignUp.Username)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(400, err.Error())
 	}
 
 	// Hash password
 	pwdBytes, err := bcrypt.GenerateFromPassword([]byte(userSignUp.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when hashing password",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error hashing password: "+err.Error())
 	}
 
 	// Create new user
@@ -64,22 +61,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// Save user
 	user, err := db.InsertUser(u)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving user to database",
-			"data": map[string]any{"errorMessage": err.Error()}})
-	}
-
-	// Create notification
-	n := &models.Notification{
-		TextContent: "Welcome! Thanks for signing up.",
-		HasViewed:   false,
-		UserId:      user.Id,
-	}
-
-	// Save notification
-	_, err = db.InsertNotification(n)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Server error when saving a notification to the database.",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error saving user to database: "+err.Error())
 	}
 
 	// Create JWT for email verification link
@@ -87,30 +69,28 @@ func CreateUser(c *fiber.Ctx) error {
 		UserId: user.Id,
 		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.LoginDuration)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Error creating JWT: "+err.Error())
 	}
 
 	// Create email verification link
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
 
 	// Send verification email
 	err = mail.SendEmailVerification(user.Email, link)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "New user was saved to the database, but there was an error sending the email verification",
-			"data": map[string]any{"errorMessage": err.Error()}})
+		return fiber.NewError(500, "Saved new user, but an error occurred when sending email verification: "+err.Error())
 	}
 
 	// Serialize user
 	userResponse := serialization.UserResponse(&user)
 
-	// Create JSON response and send
+	// Response
 	return utils.SendSuccessJSON(c, 201, userResponse, "Saved new user")
 }
 
@@ -171,7 +151,7 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	// Check email availability, if new email
 	if userUpdate.Email != user.Email {
-		msg, err := db.CheckEmailAvailability(userUpdate.Email)
+		msg, err := db.IsEmailAvailable(userUpdate.Email)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
 				"data": map[string]any{"errorMessage": err.Error()}})
@@ -180,7 +160,7 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	// Check username availability, if new username
 	if userUpdate.Username != user.Username {
-		msg, err := db.CheckUsernameAvailability(userUpdate.Username)
+		msg, err := db.IsUsernameAvailable(userUpdate.Username)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
 				"data": map[string]any{"errorMessage": err.Error()}})
@@ -310,7 +290,7 @@ func UpdateEmail(c *fiber.Ctx) error {
 	}
 
 	// Check if email is already taken
-	msg, err := db.CheckEmailAvailability(body.Email)
+	msg, err := db.IsEmailAvailable(body.Email)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
 			"data": map[string]any{"errorMessage": err.Error()}})
@@ -333,14 +313,14 @@ func UpdateEmail(c *fiber.Ctx) error {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Create email verification link
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
 
 	// Send verification email
 	err = mail.SendEmailVerification(body.Email, link)
@@ -374,7 +354,7 @@ func UpdateUsername(c *fiber.Ctx) error {
 	}
 
 	// Check if username is already taken
-	msg, err := db.CheckUsernameAvailability(body.Username)
+	msg, err := db.IsUsernameAvailable(body.Username)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": msg,
 			"data": map[string]any{"errorMessage": err.Error()}})

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/mail"
@@ -9,7 +10,6 @@ import (
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,7 +32,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	// Validate JWT
 	token, err := jwt.ParseWithClaims(qParams.Token, &models.JwtVerifyEmail{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SECRET")), nil
+		return []byte(config.API_SECRET), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		return EmailVerificationFailurePage(c, err.Error())
@@ -114,14 +114,14 @@ func ResendEmailVerification(c *fiber.Ctx) error {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for email verification link",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Create email verification link
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
 
 	// Send verification email
 	err = mail.SendEmailVerification(body.Email, link)
@@ -233,14 +233,14 @@ func ForgotPassword(c *fiber.Ctx) error {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	jwtString, err := token.SignedString([]byte(config.API_SECRET))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error when creating JWT for password reset link",
 			"data": map[string]any{"errorMessage": err.Error()}})
 	}
 
 	// Create password reset link
-	link := fmt.Sprintf("%s/api/v1/auth/reset-password/request?token=%s", os.Getenv("API_BASE_URL"), jwtString)
+	link := fmt.Sprintf("%s/api/v1/auth/reset-password/request?token=%s", config.API_BASE_URL, jwtString)
 
 	// Send email
 	err = mail.SendPasswordReset(body.Email, link)
@@ -287,7 +287,7 @@ func ResetForgottenPassword(c *fiber.Ctx) error {
 
 	// Validate JWT
 	token, err := jwt.ParseWithClaims(body.Token, &models.JwtUser{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SECRET")), nil
+		return []byte(config.API_SECRET), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "fail", "message": "Error parsing JWT",

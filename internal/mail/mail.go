@@ -2,15 +2,15 @@ package mail
 
 import (
 	"fmt"
+	"go-fiber-api-starter/internal/config"
 	"log"
-	"os"
 	"strconv"
 
 	"gopkg.in/gomail.v2"
 )
 
 func SendEmailVerification(to string, link string) error {
-	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Welcome!",
+	err := SendMail(to, config.EMAIL_FROM, "Welcome!",
 		fmt.Sprintf(EmailVerificationTemplate, link, link))
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func SendEmailVerification(to string, link string) error {
 }
 
 func SendPasswordReset(to string, link string) error {
-	err := SendMail(to, os.Getenv("EMAIL_FROM"), "Reset Password",
+	err := SendMail(to, config.EMAIL_FROM, "Reset Password",
 		fmt.Sprintf(ResetPasswordTemplate, link, link))
 	if err != nil {
 		return err
@@ -35,10 +35,10 @@ func SendMail(to string, from string, subject string, body string) error {
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body)
 
-	host := os.Getenv("EMAIL_HOST")
-	username := os.Getenv("EMAIL_USERNAME")
-	password := os.Getenv("EMAIL_APP_PASSWORD")
-	port, err := strconv.Atoi(os.Getenv("EMAIL_PORT"))
+	host := config.EMAIL_HOST
+	username := config.EMAIL_USERNAME
+	password := config.EMAIL_APP_PASSWORD
+	port, err := strconv.Atoi(config.EMAIL_PORT)
 	if err != nil {
 		log.Fatal("Error converting EMAIL_PORT from string to integer:", err)
 	}

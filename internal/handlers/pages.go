@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"html/template"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -58,22 +58,6 @@ func ResetPasswordPage(c *fiber.Ctx) error {
 		Token:     qParams.Token,
 	}
 	filenames := []string{"root-layout", "header", "password-reset"}
-	return renderAndSendHTML(c, data, filenames)
-}
-
-func ErrorPage(c *fiber.Ctx, err *fiber.Error) error {
-	data := struct {
-		ShowLogin    bool
-		StatusCode   int
-		ErrorMessage string
-		ErrorDetails string
-	}{
-		ShowLogin:    false,
-		StatusCode:   err.Code,
-		ErrorMessage: err.Message,
-		ErrorDetails: err.Error(),
-	}
-	filenames := []string{"root-layout", "header", "error"}
 	return renderAndSendHTML(c, data, filenames)
 }
 

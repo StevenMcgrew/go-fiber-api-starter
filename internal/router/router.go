@@ -61,4 +61,9 @@ func SetupRoutes(app *fiber.App) {
 	v1.Get("/notifications/:noteId", mw.Authn, mw.OnlyAdmin, hn.GetNotification)
 	v1.Post("/notifications/", mw.Authn, mw.OnlyAdmin, hn.CreateNotification)
 	v1.Delete("/users/:userId/notifications/:noteId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.DeleteNotification)
+
+	// 404 Not Found
+	app.Use(func(c *fiber.Ctx) error {
+		return fiber.NewError(404, "Not Found")
+	})
 }
