@@ -89,22 +89,23 @@ func UpdatePassword(id uint, password string) (models.User, error) {
 	return row, err
 }
 
-func SoftDeleteUser(id uint) error {
-	if err := None(`UPDATE users
+func SoftDeleteUser(id uint) (models.User, error) {
+	row, err := One(`UPDATE users
 					SET status = @status, deleted_at = CURRENT_TIMESTAMP
-					WHERE id = @id;`,
-		pgx.NamedArgs{"status": userstatus.DELETED, "id": id}); err != nil {
-		return err
-	}
-	return nil
+					WHERE id = @id
+					RETURNING *;`,
+		pgx.NamedArgs{
+			"status": userstatus.DELETED,
+			"id":     id},
+		&models.User{})
+	return row, err
 }
 
-func HardDeleteUser(id uint) error {
-	if err := None(`DELETE FROM users WHERE id = @id;`,
-		pgx.NamedArgs{"id": id}); err != nil {
-		return err
-	}
-	return nil
+func HardDeleteUser(id uint) (models.User, error) {
+	row, err := One(`DELETE FROM users WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"id": id},
+		&models.User{})
+	return row, err
 }
 
 func CheckEmailAvailability(email string) error {

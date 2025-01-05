@@ -35,12 +35,13 @@ func OnlyAdminOrOwner(c *fiber.Ctx) error {
 		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
-	// Only allow admin or owner
+	// Allow admin or owner
 	isAdmin := (inquirer.Role == userrole.ADMIN)
 	isOwner := (inquirer.Id == user.Id)
 	if isAdmin || isOwner {
 		return c.Next()
-	} else {
-		return fiber.NewError(403, "The user does not have permission to access this resource")
 	}
+
+	// Reject others
+	return fiber.NewError(403, "The user does not have permission to access this resource")
 }

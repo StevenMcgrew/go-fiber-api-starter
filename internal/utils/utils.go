@@ -16,7 +16,7 @@ func CreateJWT(user *models.User) (string, error) {
 	claims := &models.JwtUser{
 		UserId: user.Id,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.LoginDuration)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

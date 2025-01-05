@@ -46,9 +46,9 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/auth/reset-password/update", hn.ResetForgottenPassword)
 
 	// USERS
-	v1.Post("/users/", hn.CreateUser)
+	v1.Post("/users", hn.CreateUser)
 	v1.Get("/users/:userId", mw.AttachUser, hn.GetUser)
-	v1.Get("/users/", mw.Authn, hn.GetAllUsers)
+	v1.Get("/users", mw.Authn, hn.GetAllUsers)
 	v1.Post("/users/email/availability", hn.IsEmailAvailable)
 	v1.Post("/users/username/availability", hn.IsUsernameAvailable)
 	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdmin, hn.UpdateUser)
@@ -59,9 +59,9 @@ func SetupRoutes(app *fiber.App) {
 
 	// NOTIFICATIONS
 	v1.Get("/users/:userId/notifications", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.GetAllNotificationsForUser)
-	v1.Get("/notifications/", mw.Authn, mw.OnlyAdmin, hn.GetAllNotifications)
+	v1.Get("/notifications", mw.Authn, mw.OnlyAdmin, hn.GetAllNotifications)
 	v1.Get("/notifications/:noteId", mw.Authn, mw.OnlyAdmin, hn.GetNotification)
-	v1.Post("/notifications/", mw.Authn, mw.OnlyAdmin, hn.CreateNotification)
+	v1.Post("/notifications", mw.Authn, mw.OnlyAdmin, hn.CreateNotification)
 	v1.Delete("/users/:userId/notifications/:noteId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.DeleteNotification)
 
 	// 404 Not Found

@@ -405,10 +405,12 @@ func SoftDeleteUser(c *fiber.Ctx) error {
 	userId := uint(id)
 
 	// Soft delete the user
-	if err := db.SoftDeleteUser(userId); err != nil {
+	row, err := db.SoftDeleteUser(userId)
+	if err != nil {
 		return fiber.NewError(500, "Error deleting user from database: "+err.Error())
 	}
 
 	// Send response
-	return utils.SendSuccessJSON(c, 200, nil, "Deleted user from database")
+	data := map[string]any{"id": row.Id}
+	return utils.SendSuccessJSON(c, 200, data, "Deleted user from database")
 }
