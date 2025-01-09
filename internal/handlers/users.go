@@ -8,10 +8,10 @@ import (
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
-	"go-fiber-api-starter/internal/querybuilder"
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
+	"math"
 	"strings"
 	"time"
 
@@ -99,9 +99,9 @@ func CreateUser(c *fiber.Ctx) error {
 func GetAllUsers(c *fiber.Ctx) error {
 	// Expected query parameters
 	type queryParams struct {
-		Page    int
-		PerPage int
-		Query   string
+		Page    uint   `query:"page"`
+		PerPage uint   `query:"per_page"`
+		Query   string `query:"query"`
 	}
 	qParams := &queryParams{}
 
@@ -110,121 +110,65 @@ func GetAllUsers(c *fiber.Ctx) error {
 		return fiber.NewError(400, "Error parsing query parameters: "+err.Error())
 	}
 
-	// Validate
+	// Set simpler var names
+	page := qParams.Page
+	perPage := qParams.PerPage
+	query := qParams.Query
 
-	// Query builder
-	qb := querybuilder.New(
-		qParams.Page,
-		qParams.PerPage,
-		qParams.Query,
-		"users",
-		[]string{
-			"id",
-			"email",
-			"username",
-			"password",
-			"role",
-			"status",
-			"image_url",
-			"created_at",
-			"updated_at",
-			"deleted_at",
-		},
-	)
-
-	queryString, err := qb.Build()
+	// Get row rowCount
+	rowCount, err := db.GetRowCount("users")
 	if err != nil {
-		return fiber.NewError(500, "Error building query: "+err.Error())
+		return fiber.NewError(500, "Error getting row count: "+err.Error())
+	}
+	if rowCount == 0 {
+		return fiber.NewError(400, "No records were found in the database")
 	}
 
-	return utils.SendSuccessJSON(c, 200, queryString, "TESTING")
-	// // Keyword Map
-	// keywords := map[string]string{
-	// 	"where":       "WHERE",
-	// 	"eq":          "=",
-	// 	"not_eq":      "!=",
-	// 	"gt":          ">",
-	// 	"lt":          "<",
-	// 	"gt_eq":       ">=",
-	// 	"lt_eq":       "<=",
-	// 	"and":         "AND",
-	// 	"or":          "OR",
-	// 	"not":         "NOT",
-	// 	"between":     "BETWEEN",
-	// 	"not_between": "NOT BETWEEN",
-	// 	"in":          "IN",
-	// 	"not_in":      "NOT IN",
-	// 	"is_null":     "IS NULL",
-	// 	"is_not_null": "IS NOT NULL",
-	// 	"starts_with": "'%s%'",
-	// 	"ends_with":   "'%%s'",
-	// 	"contains":    "'%%s%'",
-	// 	"order_by":    "ORDER BY",
-	// 	"asc":         "ASC",
-	// 	"desc":        "DESC",
-	// }
+	// Validate
+	if page < 1 {
+		return fiber.NewError(400, "Page number must be 1 or greater")
+	}
+	floatPageCount := math.Ceil(float64(rowCount) / float64(perPage))
+	pageCount := uint(floatPageCount)
+	if page > pageCount {
+		return fiber.NewError(400, "The page number requested is larger than the total number of pages")
+	}
 
-	// userFields := []string{
-	// 	"id",
-	// 	"email",
-	// 	"username",
-	// 	"password",
-	// 	"role",
-	// 	"status",
-	// 	"image_url",
-	// 	"created_at",
-	// 	"updated_at",
-	// 	"deleted_at",
-	// }
+	// Get users
+	users, sql, err := db.GetUsers(page, perPage, query)
+	if err != nil {
+		return fiber.NewError(500, "Error getting users from database: "+err.Error())
+	}
 
-	// // Unescape query form url
-	// unescaped, err := url.QueryUnescape(qParams.Query)
-	// if err != nil {
-	// 	return fiber.NewError(400, "Error unescaping query: "+err.Error())
-	// }
+	// TODO: Serialize users for response
 
-	// // Split by dot
-	// dotSplitWords := strings.Split(unescaped, ".")
+	// Create pagination data for response
+	pre := "/api/v1"
+	selfLink := fmt.Sprintf("%s/users?page=%d&per_page=%d&query=%s", pre, page, perPage, query)
+	firstLink := fmt.Sprintf("%s/users?page=%d&per_page=%d&query=%s", pre, 1, perPage, query)
+	previousLink := fmt.Sprintf("%s/users?page=%d&per_page=%d&query=%s", pre, page-1, perPage, query)
+	if page == 1 {
+		previousLink = ""
+	}
+	nextLink := fmt.Sprintf("%s/users?page=%d&per_page=%d&query=%s", pre, page+1, perPage, query)
+	if page == pageCount {
+		nextLink = ""
+	}
+	lastLink := fmt.Sprintf("%s/users?page=%d&per_page=%d&query=%s", pre, pageCount, perPage, query)
+	pageData := &models.Pagination{
+		Page:         page,
+		PerPage:      perPage,
+		TotalPages:   pageCount,
+		TotalCount:   rowCount,
+		SelfLink:     selfLink,
+		FirstLink:    firstLink,
+		PreviousLink: previousLink,
+		NextLink:     nextLink,
+		LastLink:     lastLink,
+	}
 
-	// // Start of query string
-	// q := "SELECT * FROM users "
-
-	// // Transform and append dotSplitWords to q
-	// for _, word := range dotSplitWords {
-	// 	if strings.Contains(word, ",") {
-	// 		// Split the word by comma
-	// 		commaSplitWords := strings.Split(word, ",")
-	// 		// Transform and append commaSplitWords to q
-	// 		for _, w := range commaSplitWords {
-	// 			if kw, ok := keywords[w]; ok {
-	// 				q += kw + ", "
-	// 				continue
-	// 			}
-	// 			if slices.Contains(userFields, w) {
-	// 				q += w + ", "
-	// 				continue
-	// 			}
-	// 			q += "'" + w + "', "
-	// 		}
-	// 		// Remove last space and comma and append a single space
-	// 		q = q[:len(q)-2] + " "
-	// 		continue
-	// 	}
-
-	// 	if keyword, ok := keywords[word]; ok {
-	// 		q += keyword + " "
-	// 		continue
-	// 	}
-	// 	if slices.Contains(userFields, word) {
-	// 		q += word + " "
-	// 		continue
-	// 	}
-	// 	q += "'" + word + "' "
-	// }
-
-	// // append LIMIT and OFFSET
-	// q += fmt.Sprintf("LIMIT %d OFFSET (%d - 1) * %d;", qParams.PerPage, qParams.Page, qParams.PerPage)
-
+	// Respond
+	return utils.SendPaginationJSON(c, users, pageData, sql)
 }
 
 func GetUser(c *fiber.Ctx) error {

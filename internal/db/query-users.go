@@ -49,6 +49,38 @@ func GetUserByUsername(username string) (models.User, error) {
 	return row, err
 }
 
+func GetUsers(page uint, perPage uint, query string) ([]models.User, string, error) {
+	// Query builder
+	qb := NewQueryBuilder(
+		page,
+		perPage,
+		query,
+		"users",
+		[]string{
+			"id",
+			"email",
+			"username",
+			"password",
+			"role",
+			"status",
+			"image_url",
+			"created_at",
+			"updated_at",
+			"deleted_at",
+		},
+	)
+
+	// Build the query string
+	queryString, err := qb.Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Run the query
+	rows, err := Many(queryString, pgx.NamedArgs{}, &models.User{})
+	return rows, queryString, err
+}
+
 func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	row, err := One(`UPDATE users
 					 SET email = @email,

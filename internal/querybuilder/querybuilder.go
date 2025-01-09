@@ -8,15 +8,15 @@ import (
 )
 
 type QueryBuilder struct {
-	page       int
-	perPage    int
+	page       uint
+	perPage    uint
 	query      string
 	tableName  string
 	fieldNames []string
 	keywords   map[string]string
 }
 
-func New(page int, perPage int, query string, tableName string, fieldNames []string) QueryBuilder {
+func New(page uint, perPage uint, query string, tableName string, fieldNames []string) QueryBuilder {
 	return QueryBuilder{
 		page:       page,
 		perPage:    perPage,

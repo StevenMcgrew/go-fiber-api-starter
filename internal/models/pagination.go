@@ -1,13 +1,13 @@
 package models
 
 type Pagination struct {
-	Page         int
-	PerPage      int
-	TotalPages   int
-	TotalCount   int
-	SelfLink     string
-	FirstLink    string
-	PreviousLink string
-	NextLink     string
-	LastLink     string
+	Page         uint   `json:"page"`
+	PerPage      uint   `json:"perPage"`
+	TotalPages   uint   `json:"totalPages"`
+	TotalCount   uint   `json:"totalCount"`
+	SelfLink     string `json:"selfLink"`
+	FirstLink    string `json:"firstLink"`
+	PreviousLink string `json:"previousLink"`
+	NextLink     string `json:"nextLink"`
+	LastLink     string `json:"lastLink"`
 }
