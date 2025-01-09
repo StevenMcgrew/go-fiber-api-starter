@@ -8,6 +8,7 @@ import (
 	"go-fiber-api-starter/internal/enums/userstatus"
 	"go-fiber-api-starter/internal/mail"
 	"go-fiber-api-starter/internal/models"
+	"go-fiber-api-starter/internal/querybuilder"
 	"go-fiber-api-starter/internal/serialization"
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
@@ -94,8 +95,136 @@ func CreateUser(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 201, userResponse, "Saved new user")
 }
 
+// ?page=5&per_page=20&query=where.status.eq.verified.and.role.eq.regular.orderby.id.asc,created_at.desc
 func GetAllUsers(c *fiber.Ctx) error {
-	return nil
+	// Expected query parameters
+	type queryParams struct {
+		Page    int
+		PerPage int
+		Query   string
+	}
+	qParams := &queryParams{}
+
+	// Parse
+	if err := c.QueryParser(qParams); err != nil {
+		return fiber.NewError(400, "Error parsing query parameters: "+err.Error())
+	}
+
+	// Validate
+
+	// Query builder
+	qb := querybuilder.New(
+		qParams.Page,
+		qParams.PerPage,
+		qParams.Query,
+		"users",
+		[]string{
+			"id",
+			"email",
+			"username",
+			"password",
+			"role",
+			"status",
+			"image_url",
+			"created_at",
+			"updated_at",
+			"deleted_at",
+		},
+	)
+
+	queryString, err := qb.Build()
+	if err != nil {
+		return fiber.NewError(500, "Error building query: "+err.Error())
+	}
+
+	return utils.SendSuccessJSON(c, 200, queryString, "TESTING")
+	// // Keyword Map
+	// keywords := map[string]string{
+	// 	"where":       "WHERE",
+	// 	"eq":          "=",
+	// 	"not_eq":      "!=",
+	// 	"gt":          ">",
+	// 	"lt":          "<",
+	// 	"gt_eq":       ">=",
+	// 	"lt_eq":       "<=",
+	// 	"and":         "AND",
+	// 	"or":          "OR",
+	// 	"not":         "NOT",
+	// 	"between":     "BETWEEN",
+	// 	"not_between": "NOT BETWEEN",
+	// 	"in":          "IN",
+	// 	"not_in":      "NOT IN",
+	// 	"is_null":     "IS NULL",
+	// 	"is_not_null": "IS NOT NULL",
+	// 	"starts_with": "'%s%'",
+	// 	"ends_with":   "'%%s'",
+	// 	"contains":    "'%%s%'",
+	// 	"order_by":    "ORDER BY",
+	// 	"asc":         "ASC",
+	// 	"desc":        "DESC",
+	// }
+
+	// userFields := []string{
+	// 	"id",
+	// 	"email",
+	// 	"username",
+	// 	"password",
+	// 	"role",
+	// 	"status",
+	// 	"image_url",
+	// 	"created_at",
+	// 	"updated_at",
+	// 	"deleted_at",
+	// }
+
+	// // Unescape query form url
+	// unescaped, err := url.QueryUnescape(qParams.Query)
+	// if err != nil {
+	// 	return fiber.NewError(400, "Error unescaping query: "+err.Error())
+	// }
+
+	// // Split by dot
+	// dotSplitWords := strings.Split(unescaped, ".")
+
+	// // Start of query string
+	// q := "SELECT * FROM users "
+
+	// // Transform and append dotSplitWords to q
+	// for _, word := range dotSplitWords {
+	// 	if strings.Contains(word, ",") {
+	// 		// Split the word by comma
+	// 		commaSplitWords := strings.Split(word, ",")
+	// 		// Transform and append commaSplitWords to q
+	// 		for _, w := range commaSplitWords {
+	// 			if kw, ok := keywords[w]; ok {
+	// 				q += kw + ", "
+	// 				continue
+	// 			}
+	// 			if slices.Contains(userFields, w) {
+	// 				q += w + ", "
+	// 				continue
+	// 			}
+	// 			q += "'" + w + "', "
+	// 		}
+	// 		// Remove last space and comma and append a single space
+	// 		q = q[:len(q)-2] + " "
+	// 		continue
+	// 	}
+
+	// 	if keyword, ok := keywords[word]; ok {
+	// 		q += keyword + " "
+	// 		continue
+	// 	}
+	// 	if slices.Contains(userFields, word) {
+	// 		q += word + " "
+	// 		continue
+	// 	}
+	// 	q += "'" + word + "' "
+	// }
+
+	// // append LIMIT and OFFSET
+	// q += fmt.Sprintf("LIMIT %d OFFSET (%d - 1) * %d;", qParams.PerPage, qParams.Page, qParams.PerPage)
+
 }
 
 func GetUser(c *fiber.Ctx) error {
