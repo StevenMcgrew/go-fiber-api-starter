@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/models"
 	"go-fiber-api-starter/internal/utils"
+	"math"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -73,8 +75,78 @@ func GetAllNotificationsForUser(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 200, notifications, "Retrieved all notifications associated with the user id")
 }
 
+// ?page=5&per_page=20&query=where.has_viewed.eq.false.orderby.id.desc
 func GetAllNotifications(c *fiber.Ctx) error {
-	return nil
+	// Expected query parameters
+	type queryParams struct {
+		Page    uint   `query:"page"`
+		PerPage uint   `query:"per_page"`
+		Query   string `query:"query"`
+	}
+	qParams := &queryParams{}
+
+	// Parse
+	if err := c.QueryParser(qParams); err != nil {
+		return fiber.NewError(400, "Error parsing query parameters: "+err.Error())
+	}
+
+	// Set simpler var names
+	page := qParams.Page
+	perPage := qParams.PerPage
+	query := qParams.Query
+
+	// Get row rowCount
+	rowCount, err := db.GetRowCount("notificaTions")
+	if err != nil {
+		return fiber.NewError(500, "Error getting row count: "+err.Error())
+	}
+	if rowCount == 0 {
+		return fiber.NewError(400, "No records were found in the database")
+	}
+
+	// Validate
+	if page < 1 {
+		return fiber.NewError(400, "Page number must be 1 or greater")
+	}
+	floatPageCount := math.Ceil(float64(rowCount) / float64(perPage))
+	pageCount := uint(floatPageCount)
+	if page > pageCount {
+		return fiber.NewError(400, "The page number requested is larger than the total number of pages")
+	}
+
+	// Get notifications
+	notifications, sql, err := db.GetNotifications(page, perPage, query)
+	if err != nil {
+		return fiber.NewError(500, "Error getting notifications from database: "+err.Error())
+	}
+
+	// Create pagination data for response
+	pre := "/api/v1/notifications"
+	selfLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page, perPage, query)
+	firstLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, 1, perPage, query)
+	previousLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page-1, perPage, query)
+	if page == 1 {
+		previousLink = ""
+	}
+	nextLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page+1, perPage, query)
+	if page == pageCount {
+		nextLink = ""
+	}
+	lastLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, pageCount, perPage, query)
+	pageData := &models.Pagination{
+		Page:         page,
+		PerPage:      perPage,
+		TotalPages:   pageCount,
+		TotalCount:   rowCount,
+		SelfLink:     selfLink,
+		FirstLink:    firstLink,
+		PreviousLink: previousLink,
+		NextLink:     nextLink,
+		LastLink:     lastLink,
+	}
+
+	// Respond
+	return utils.SendPaginationJSON(c, notifications, pageData, sql)
 }
 
 func DeleteNotification(c *fiber.Ctx) error {

@@ -32,8 +32,31 @@ func GetAllNotificationsForUserId(userId uint) ([]models.Notification, error) {
 	return rows, err
 }
 
-func GetAllNotifications() ([]models.Notification, error) {
-	return []models.Notification{}, nil
+func GetNotifications(page uint, perPage uint, query string) ([]models.Notification, string, error) {
+	// Query builder
+	qb := NewQueryBuilder(
+		page,
+		perPage,
+		query,
+		"notifications",
+		[]string{
+			"id",
+			"text_content",
+			"has_viewed",
+			"user_id",
+			"created_at",
+		},
+	)
+
+	// Build the query string
+	queryString, err := qb.Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Run the query
+	rows, err := Many(queryString, pgx.NamedArgs{}, &models.Notification{})
+	return rows, queryString, err
 }
 
 func DeleteNotificationByIds(noteId uint, userId uint) (models.Notification, error) {
