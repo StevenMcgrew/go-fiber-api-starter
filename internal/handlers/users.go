@@ -140,7 +140,30 @@ func GetAllUsers(c *fiber.Ctx) error {
 		return fiber.NewError(500, "Error getting users from database: "+err.Error())
 	}
 
-	// TODO: Serialize users for response
+	// Type assert user that is requesting access (should be in c.Locals() from Authn() middleware)
+	inquirer, ok := c.Locals("inquirer").(*models.User)
+	if !ok {
+		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
+	}
+
+	// Determine if the inquirer is an admin (for use when serializing)
+	isAdmin := (inquirer.Role == userrole.ADMIN)
+
+	// Serialize users for response
+	var serializedUsers []*models.UserResponse
+	if isAdmin {
+		for _, user := range users {
+			serializedUsers = append(serializedUsers, serialization.UserResponse(&user))
+		}
+	} else {
+		for _, user := range users {
+			isOwner := (inquirer.Id == user.Id)
+			if !isOwner {
+				user.Email = "********"
+			}
+			serializedUsers = append(serializedUsers, serialization.UserResponse(&user))
+		}
+	}
 
 	// Create pagination data for response
 	pre := "/api/v1"
@@ -168,7 +191,7 @@ func GetAllUsers(c *fiber.Ctx) error {
 	}
 
 	// Respond
-	return utils.SendPaginationJSON(c, users, pageData, sql)
+	return utils.SendPaginationJSON(c, serializedUsers, pageData, sql)
 }
 
 func GetUser(c *fiber.Ctx) error {
