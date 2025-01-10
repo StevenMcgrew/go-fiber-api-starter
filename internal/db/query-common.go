@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -119,9 +118,8 @@ func NewQueryBuilder(page uint, perPage uint, query string, tableName string, fi
 			"not_in":      "NOT IN",
 			"is_null":     "IS NULL",
 			"is_not_null": "IS NOT NULL",
-			"starts_with": "'%s%'",
-			"ends_with":   "'%%s'",
-			"contains":    "'%%s%'",
+			"like":        "LIKE",
+			"ilike":       "ILIKE",
 			"order_by":    "ORDER BY",
 			"asc":         "ASC",
 			"desc":        "DESC",
@@ -130,20 +128,15 @@ func NewQueryBuilder(page uint, perPage uint, query string, tableName string, fi
 }
 
 func (qb QueryBuilder) Build() (string, error) {
-	// Unescape query (normally the query is from a url)
-	unescaped, err := url.QueryUnescape(qb.query)
-	if err != nil {
-		return "", err
-	}
-
 	// Split by dot
-	dotSplitWords := strings.Split(unescaped, ".")
+	dotSplitWords := strings.Split(qb.query, ".")
 
 	// Start of query string
 	q := fmt.Sprintf("SELECT * FROM %s ", qb.tableName)
 
 	// Transform and append the dotSplitWords to the query string
 	for _, word := range dotSplitWords {
+
 		if strings.Contains(word, ",") {
 			// Split the word by comma
 			commaSplitWords := strings.Split(word, ",")

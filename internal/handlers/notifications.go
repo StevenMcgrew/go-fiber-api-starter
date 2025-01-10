@@ -85,7 +85,7 @@ func GetAllNotifications(c *fiber.Ctx) error {
 	}
 	qParams := &queryParams{}
 
-	// Parse
+	// Parse (this also unescapes any escape sequences from the query param values)
 	if err := c.QueryParser(qParams); err != nil {
 		return fiber.NewError(400, "Error parsing query parameters: "+err.Error())
 	}

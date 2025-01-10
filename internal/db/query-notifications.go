@@ -51,7 +51,7 @@ func GetNotifications(page uint, perPage uint, query string) ([]models.Notificat
 	// Build the query string
 	queryString, err := qb.Build()
 	if err != nil {
-		return nil, "", err
+		return nil, queryString, err
 	}
 
 	// Run the query
