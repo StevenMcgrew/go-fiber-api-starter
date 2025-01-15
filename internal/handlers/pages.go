@@ -8,12 +8,32 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func HomePage(c *fiber.Ctx) error {
-	data := struct{ ShowLogin bool }{ShowLogin: true}
-	filenames := []string{"root-layout", "header"}
-	return renderAndSendHTML(c, data, filenames)
+type data struct {
+	Title     string
+	ShowLogin bool
+	Test      string
 }
 
+func HomePage(c *fiber.Ctx) error {
+	return c.Render("pages/home", data{
+		Title:     "Home",
+		ShowLogin: true,
+	}, "root")
+}
+
+func SignUpPage(c *fiber.Ctx) error {
+	return c.Render("pages/signup", data{
+		Title:     "Sign Up",
+		ShowLogin: false,
+	}, "root")
+}
+
+func LogInPage(c *fiber.Ctx) error {
+	return c.Render("pages/login", data{
+		Title:     "Log In",
+		ShowLogin: false,
+	}, "root")
+}
 func SuccessfullyVerifiedEmailPage(c *fiber.Ctx) error {
 	data := struct {
 		ShowLogin bool

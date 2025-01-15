@@ -1,11 +1,8 @@
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.app-header>div>button {
-    margin-inline: 1px;
+/*******************************************
+Styles for default html elements
+*******************************************/
+button {
+    text-transform: uppercase;
 }
 
 [popover] {
@@ -25,17 +22,44 @@
     background-color: var(--nc-bg-1);
 }
 
+::backdrop {
+    backdrop-filter: blur(3px);
+}
+
+/*******************************************
+Other styles
+*******************************************/
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header>a {
+    color: var(--nc-tx-1);
+    text-decoration: none;
+}
+
+.app-header>div>button {
+    margin-inline: 1px;
+}
+
+.form-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
 .auth-form {
+    width: clamp(200px, 300px, 400px);
     display: flex;
     flex-direction: column;
-    padding-inline: 30px;
-    padding-block: 20px;
-    margin-bottom: 0;
 }
 
 .auth-form h3 {
     padding-top: 7px;
     padding-bottom: 20px;
+    text-align: center;
 }
 
 .form-btn-box {

@@ -28,8 +28,10 @@ func SetupRoutes(app *fiber.App) {
 	// Static
 	app.Static("/", "./public", config.FiberStaticConfig)
 
-	// Web pages
+	// PAGES
 	app.Get("/", hn.HomePage)
+	app.Get("/signup", hn.SignUpPage)
+	app.Get("/login", hn.LogInPage)
 
 	// Health check
 	app.Get("/health", hn.HealthCheck)

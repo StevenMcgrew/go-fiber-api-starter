@@ -2,6 +2,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -72,7 +75,7 @@ var FiberServerConfig = fiber.Config{
 	// StrictRouting:     false,
 	// TrustedProxies:    []string,
 	// UnescapePath:      false,
-	// Views:             nil,
+	Views: NewViewEngine(),
 	// ViewsLayout:       "",
 	// WriteBufferSize:   fiber.DefaultWriteBufferSize,
 	// WriteTimeout:      time.Duration(),
@@ -123,7 +126,21 @@ var FiberStaticConfig = fiber.Static{
 	Next:           nil,
 }
 
+func NewViewEngine() *html.Engine {
+	// Get views directory
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error getting working directory during NewViewEngine() function:", err.Error())
+	}
+	viewsDir := wd + "/internal/views"
+
+	// Create view engine
+	engine := html.New(viewsDir, ".html")
+	return engine
+}
+
 func ServerErrorHandler(c *fiber.Ctx, err error) error {
+	fmt.Println("ServerErrorHandler:", err.Error())
 	var fiberErr *fiber.Error
 
 	// Handle errors other than fiber.Error
@@ -150,7 +167,7 @@ func ServerErrorHandler(c *fiber.Ctx, err error) error {
 			ErrorMessage: fiberErr.Message,
 			ErrorDetails: fiberErr.Error(),
 		}
-		filenames := []string{"root-layout", "header", "error"}
+		filenames := []string{"root", "components/header", "pages/error"}
 
 		// Get views directory
 		wd, err := os.Getwd()
