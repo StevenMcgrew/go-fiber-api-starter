@@ -75,7 +75,7 @@ var FiberServerConfig = fiber.Config{
 	// StrictRouting:     false,
 	// TrustedProxies:    []string,
 	// UnescapePath:      false,
-	Views: NewViewEngine(),
+	// Views: NewViewEngine(),
 	// ViewsLayout:       "",
 	// WriteBufferSize:   fiber.DefaultWriteBufferSize,
 	// WriteTimeout:      time.Duration(),
@@ -130,7 +130,7 @@ func NewViewEngine() *html.Engine {
 	// Get views directory
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Error getting working directory during NewViewEngine() function:", err.Error())
+		log.Fatal("Error getting working directory during NewViewEngine() function:", err.Error())
 	}
 	viewsDir := wd + "/internal/views"
 

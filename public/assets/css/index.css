@@ -1,49 +1,4 @@
-/*******************************************
-Styles for default html elements
-*******************************************/
-button {
-    text-transform: uppercase;
-}
 
-[popover] {
-    position: fixed;
-    inset: 0;
-    width: fit-content;
-    height: fit-content;
-    margin: auto;
-    border: 1px solid var(--nc-bg-3);
-    padding: 0.25em;
-    overflow: auto;
-    background-color: var(--nc-bg-2);
-    color: inherit;
-}
-
-[popover] input {
-    background-color: var(--nc-bg-1);
-}
-
-::backdrop {
-    backdrop-filter: blur(3px);
-}
-
-/*******************************************
-Other styles
-*******************************************/
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.app-header>a {
-    color: var(--nc-tx-1);
-    text-decoration: none;
-}
-
-.app-header>div>button {
-    margin-inline: 1px;
-}
 
 .form-wrapper {
     display: flex;
@@ -66,14 +21,4 @@ Other styles
     display: flex;
     justify-content: space-evenly;
     padding-top: 23px;
-}
-
-.verified-heading {
-    text-align: center;
-    padding-right: 20px;
-}
-
-.thanks-message {
-    text-align: center;
-    font-size: 20px;
 }
