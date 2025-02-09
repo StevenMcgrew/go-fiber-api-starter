@@ -1,0 +1,24 @@
+button {
+    text-transform: uppercase;
+}
+
+[popover] {
+    position: fixed;
+    inset: 0;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+    border: 1px solid var(--nc-bg-3);
+    padding: 0.25em;
+    overflow: auto;
+    background-color: var(--nc-bg-2);
+    color: inherit;
+}
+
+[popover] input {
+    background-color: var(--nc-bg-1);
+}
+
+::backdrop {
+    backdrop-filter: blur(3px);
+  }
