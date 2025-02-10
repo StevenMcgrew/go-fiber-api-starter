@@ -1,24 +1,19 @@
 <script lang="ts">
-    import ModalDialog from "./ModalDialog.svelte";
-    import { orientLoginBtns, Orient } from "../../store";
-
-    let showLoginForm: any = $state()
-
-    function loginClicked(e: MouseEvent) {
-        showLoginForm = true
-    }
+    import { S, orient } from "../../store.svelte";
+    import LoginForm from "./LoginForm.svelte";
+    import SignUpForm from "./SignUpForm.svelte";
 </script>
 
-<div class="btn-box {$orientLoginBtns === Orient.Vert ? Orient.Vert : ''}">
-    <a href="/login">
-        <button class={$orientLoginBtns === Orient.Vert ? "btn-width" : ""} onclick={loginClicked}>Log In</button>
-    </a>
-    <a href="/signup">
-        <button class={$orientLoginBtns === Orient.Vert ? "btn-width" : ""}>Sign Up</button>
-    </a>
+<div class="btn-box {S.orientLoginBtns === orient.vert ? orient.vert : ''}">
+    <button class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
+            onclick={() => (S.showModal = LoginForm)}>
+        Log In
+    </button>
+    <button class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
+            onclick={() => (S.showModal = SignUpForm)}>
+        Sign Up
+    </button>
 </div>
-
-<ModalDialog/>
 
 <style>
     .btn-box {
