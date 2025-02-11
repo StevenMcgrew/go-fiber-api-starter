@@ -2,6 +2,7 @@ button {
     text-transform: uppercase;
 }
 
+dialog,
 [popover] {
     position: fixed;
     inset: 0;
@@ -15,10 +16,37 @@ button {
     color: inherit;
 }
 
-[popover] input {
+:is(dialog, [popover]) input {
     background-color: var(--nc-bg-1);
 }
 
 ::backdrop {
     backdrop-filter: blur(3px);
-  }
+}
+
+.form-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    padding: 0rem 1rem 0rem 1rem;
+    width: clamp(200px, 300px, 400px);
+}
+
+.auth-form h3 {
+    padding-top: 7px;
+    padding-bottom: 20px;
+}
+
+.form-btn-box {
+    display: flex;
+    justify-content: space-evenly;
+    padding-top: 23px;
+}
+
+.form-btn-box button {
+    width: 120px;
+}

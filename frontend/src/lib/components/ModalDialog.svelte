@@ -6,23 +6,32 @@
     let dialog: HTMLDialogElement;
 
     $effect(() => {
-        if (S.showModal !== null) {
+        if (S.showModal === null) {
+            dialog.close();
+        } else {
             dialog.showModal();
         }
     });
-
-    function close() {
-        dialog.close();
-    }
 </script>
 
 <dialog bind:this={dialog}>
-    <button onclick={close}>Close</button>
+    <button class="close-btn" onclick={() => (S.showModal = null)}>×</button>
     {#if S.showModal == LoginForm}
         <LoginForm />
     {:else if S.showModal == SignUpForm}
         <SignUpForm />
     {:else}
-        <p>No content</p>
+        <p>Missing content</p>
     {/if}
 </dialog>
+
+<style>
+    .close-btn {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        padding: 0px 5px 3px 5px;
+        font-size: 2rem;
+        line-height: 26px;
+    }
+</style>

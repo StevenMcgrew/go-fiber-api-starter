@@ -6,13 +6,14 @@
 }
 
 .auth-form {
-    width: clamp(200px, 300px, 400px);
     display: flex;
     flex-direction: column;
+    padding: 0rem 1rem 0rem 1rem;
+    width: clamp(200px, 300px, 400px);
 }
 
 .auth-form h3 {
-    padding-top: 7px;
+    /* padding-top: 7px; */
     padding-bottom: 20px;
     text-align: center;
 }
