@@ -36,7 +36,7 @@ func SetupRoutes(app *fiber.App) {
 
 	// AUTH
 	v1.Post("/auth/login", hn.Login)
-	v1.Get("/auth/verify-email", hn.VerifyEmail)
+	v1.Post("/auth/verify-email", hn.VerifyEmail)
 	v1.Patch("/auth/resend-email-verification", hn.ResendEmailVerification)
 	v1.Post("/auth/forgot-password", hn.ForgotPassword)
 	v1.Get("/auth/reset-password/request", hn.ResetPasswordPage)

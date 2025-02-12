@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
+    otp TEXT DEFAULT '',
     role TEXT NOT NULL,
     status TEXT NOT NULL,
     image_url TEXT DEFAULT '',

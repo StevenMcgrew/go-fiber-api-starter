@@ -1,7 +1,8 @@
 <script lang="ts">
     import NavBar from "./NavBar.svelte";
     import Login from "./Login.svelte";
-    import { S, orient } from "../../store.svelte";
+    import { S } from "../../store.svelte";
+    import { orient } from "../../types";
 
     let headerWidth: number = $state(570);
     $effect(() => {

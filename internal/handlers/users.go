@@ -55,8 +55,10 @@ func CreateUser(c *fiber.Ctx) error {
 		Email:    userSignUp.Email,
 		Username: userSignUp.Username,
 		Password: string(pwdBytes),
+		Otp:      utils.RandomSixDigitStr(),
 		Role:     userrole.REGULAR,
 		Status:   userstatus.UNVERIFIED,
+		ImageUrl: "/default-profile-pic.png",
 	}
 
 	// Save user
@@ -65,25 +67,8 @@ func CreateUser(c *fiber.Ctx) error {
 		return fiber.NewError(500, "Error saving user to database: "+err.Error())
 	}
 
-	// Create JWT for email verification link
-	claims := &models.JwtVerifyEmail{
-		UserId: user.Id,
-		Email:  user.Email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.LoginDuration)),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(config.API_SECRET))
-	if err != nil {
-		return fiber.NewError(500, "Error creating JWT: "+err.Error())
-	}
-
-	// Create email verification link
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
-
 	// Send verification email
-	err = mail.SendEmailVerification(user.Email, link)
+	err = mail.SendEmailVerification(user.Email, user.Otp)
 	if err != nil {
 		return fiber.NewError(500, "Saved new user, but an error occurred when sending email verification: "+err.Error())
 	}

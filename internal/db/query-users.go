@@ -9,10 +9,11 @@ import (
 )
 
 func InsertUser(user *models.User) (models.User, error) {
-	row, err := One(`INSERT INTO users (email, username, password, role, status, image_url)
+	row, err := One(`INSERT INTO users (email, username, password, otp, role, status, image_url)
 					 VALUES (@email,
 					 		 @username,
 							 @password,
+							 @otp,
 							 @role,
 							 @status,
 							 @imageUrl)
@@ -21,6 +22,7 @@ func InsertUser(user *models.User) (models.User, error) {
 			"email":    user.Email,
 			"username": user.Username,
 			"password": user.Password,
+			"otp":      user.Otp,
 			"role":     user.Role,
 			"status":   user.Status,
 			"imageUrl": user.ImageUrl},

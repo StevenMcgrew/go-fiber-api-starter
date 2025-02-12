@@ -1,6 +1,6 @@
 package mail
 
-var EmailVerificationTemplate = `
+const EmailVerificationTemplate = `
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,17 +12,17 @@ var EmailVerificationTemplate = `
 </head>
 
 <body>
-	<div style="text-align:center;">
+	<div style="text-align: center; font-family: Arial, sans-serif;">
 		<p>Welcome!</p>
-		<p>Please click this link to verify your email address:</p>
-		<a href="%s">%s</a>  
+		<p>Here is your verification code:</p>
+		<p style="font-weight: bold; font-size: 20px; color: cornflowerblue">%s</p>
 	</div>
 </body>
 
 </html>
 `
 
-var ResetPasswordTemplate = `
+const ResetPasswordTemplate = `
 <!DOCTYPE html>
 <html lang="en">
 

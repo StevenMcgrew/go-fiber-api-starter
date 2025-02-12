@@ -19,60 +19,57 @@ import (
 )
 
 func VerifyEmail(c *fiber.Ctx) error {
-	// Query params
-	type queryParams struct {
-		Token string `query:"token"`
+	// Shape of request body
+	type reqBody struct {
+		UserId           uint   `json:"userId" form:"userId"`
+		VerificationCode string `json:"verificationCode" form:"verificationCode"`
 	}
-	qParams := &queryParams{}
+	body := &reqBody{}
 
-	// Parse query params
-	if err := c.QueryParser(qParams); err != nil {
-		return fiber.NewError(400, "Error parsing query parameter: "+err.Error())
+	// Parse body
+	if err := c.BodyParser(body); err != nil {
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
+	fmt.Println("UserId:", body.UserId)
 
-	// Validate JWT
-	token, err := jwt.ParseWithClaims(qParams.Token, &models.JwtVerifyEmail{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(config.API_SECRET), nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
-	if err != nil {
-		return FailedToVerifyEmailPage(c, err.Error())
-	}
-	if !token.Valid {
-		return FailedToVerifyEmailPage(c, "The token is invalid")
-	}
-	payload, ok := token.Claims.(*models.JwtVerifyEmail)
-	if !ok {
-		return fiber.NewError(400, "Type assertion failed for token claims")
+	// Validate input
+	if !validation.IsOtpValid(body.VerificationCode) {
+		return fiber.NewError(400, "Verification code is invalid")
 	}
 
 	// Get user
-	user, err := db.GetUserById(payload.UserId)
+	user, err := db.GetUserById(body.UserId)
 	if err != nil {
 		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
-	// Determine user status
-	var status string
+	// Check user status
 	if user.Status == userstatus.SUSPENDED || user.Status == userstatus.DELETED {
-		status = user.Status
-	} else {
-		status = userstatus.VERIFIED
+		return fiber.NewError(400, "Cannot perform verification because user is: "+user.Status)
+	}
+
+	// Verify otp matches
+	if body.VerificationCode != user.Otp {
+		return fiber.NewError(400, "Cannot perform verification because the code did not match")
 	}
 
 	// Save to db
-	_, err = db.UpdateUser(payload.UserId, &models.UserUpdate{
-		Email:    payload.Email,
+	updatedUser, err := db.UpdateUser(body.UserId, &models.UserUpdate{
+		Email:    user.Email,
 		Username: user.Username,
 		Role:     user.Role,
-		Status:   status,
+		Status:   userstatus.VERIFIED,
 		ImageUrl: user.ImageUrl,
 	})
 	if err != nil {
 		return fiber.NewError(500, "Error updating user in database: "+err.Error())
 	}
 
-	// Send to EmailVerificationSuccessPage
-	return SuccessfullyVerifiedEmailPage(c)
+	// Serialize updated user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Response
+	return utils.SendSuccessJSON(c, 200, userResponse, "Verified")
 }
 
 func ResendEmailVerification(c *fiber.Ctx) error {

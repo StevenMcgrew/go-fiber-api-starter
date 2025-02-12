@@ -1,6 +1,8 @@
 <script lang="ts">
     import { submitSignUp } from "../../fetch";
     import { S } from "../../store.svelte";
+    import VerificationForm from "./VerificationForm.svelte";
+    import type { User } from "../../types";
 
     let formData = {
         email: "",
@@ -9,29 +11,45 @@
         passwordRepeat: "",
     };
 
-    let data: Object | null = null;
-    let isLoading: boolean = false;
+    let isLoading = false;
     let error: any = null;
-    let didSucceed: boolean = false;
+    let data: any = null;
+
+    function resetFormData() {
+        formData.email = ""
+        formData.username = ""
+        formData.password = ""
+        formData.passwordRepeat = ""
+    }
+
+    function setUser(data: any) {
+        const user: User = {
+            token: "",
+            id: data.id,
+            email: data.email,
+            username: data.username,
+            role: data.role,
+            status: data.status,
+            imageUrl: data.imageUrl,
+        };
+        S.user = user;
+    }
 
     async function onsubmit(e: SubmitEvent) {
         e.preventDefault();
         isLoading = true;
-        data = null
-        error = null
+        error = null;
 
         try {
             data = await submitSignUp(formData);
-            // TODO: do something with data
         } catch (err) {
             error = err;
         } finally {
             isLoading = false;
             if (error === null) {
-                didSucceed = true;
-                setTimeout(() => {
-                    S.showModal = null;
-                }, 1000);
+                resetFormData()
+                setUser(data)
+                S.showModal = VerificationForm
             }
         }
     }
@@ -88,9 +106,9 @@
         {#if isLoading}
             <p class="form-status-text">Submitting...</p>
         {:else if error}
-            <p class="error-text form-status-text">Error: {error.message}</p>
-        {:else if didSucceed}
-            <p class="success-text form-status-text">Success!</p>
+            <p class="error-text form-status-text">
+                Error: {error.message}
+            </p>
         {/if}
     </form>
 </div>

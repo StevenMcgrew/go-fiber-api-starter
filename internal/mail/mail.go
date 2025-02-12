@@ -9,9 +9,9 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func SendEmailVerification(to string, link string) error {
+func SendEmailVerification(to string, otp string) error {
 	err := SendMail(to, config.EMAIL_FROM, "Welcome!",
-		fmt.Sprintf(EmailVerificationTemplate, link, link))
+		fmt.Sprintf(EmailVerificationTemplate, otp))
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ type User struct {
 	Email     string     `json:"email" form:"email"`
 	Username  string     `json:"username" form:"username"`
 	Password  string     `json:"password" form:"password"`
+	Otp       string     `json:"otp" form:"otp"`
 	Role      string     `json:"role" form:"role"`
 	Status    string     `json:"status" form:"status"`
 	ImageUrl  string     `json:"imageUrl" form:"imageUrl"`

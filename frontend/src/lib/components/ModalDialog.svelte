@@ -2,6 +2,7 @@
     import { S } from "../../store.svelte";
     import LoginForm from "./LoginForm.svelte";
     import SignUpForm from "./SignUpForm.svelte";
+    import VerificationForm from "./VerificationForm.svelte";
 
     let dialog: HTMLDialogElement;
 
@@ -20,6 +21,8 @@
         <LoginForm />
     {:else if S.showModal == SignUpForm}
         <SignUpForm />
+    {:else if S.showModal == VerificationForm}
+        <VerificationForm />
     {:else}
         <p>Missing content</p>
     {/if}
