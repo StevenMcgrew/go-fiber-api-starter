@@ -1,19 +1,13 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/template/html/v2"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -126,77 +120,30 @@ var FiberStaticConfig = fiber.Static{
 	Next:           nil,
 }
 
-func NewViewEngine() *html.Engine {
-	// Get views directory
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal("Error getting working directory during NewViewEngine() function:", err.Error())
-	}
-	viewsDir := wd + "/internal/views"
+// func NewViewEngine() *html.Engine {
+// 	// Get views directory
+// 	wd, err := os.Getwd()
+// 	if err != nil {
+// 		log.Fatal("Error getting working directory during NewViewEngine() function:", err.Error())
+// 	}
+// 	viewsDir := wd + "/internal/views"
 
-	// Create view engine
-	engine := html.New(viewsDir, ".html")
-	return engine
-}
+// 	// Create view engine
+// 	engine := html.New(viewsDir, ".html")
+// 	return engine
+// }
 
 func ServerErrorHandler(c *fiber.Ctx, err error) error {
-	fmt.Println("ServerErrorHandler:", err.Error())
 	var fiberErr *fiber.Error
-
-	// Handle errors other than fiber.Error
-	if !errors.As(err, &fiberErr) {
-		return c.Status(500).SendString("Internal Server Error: " + err.Error())
-	}
 
 	// Type assert fiber.Error
 	fiberErr, ok := err.(*fiber.Error)
 	if !ok {
+		// Handle errors other than fiber.Error
 		return c.Status(500).SendString("Internal Server Error: " + err.Error())
 	}
 
-	// Handle 404 fiber.Error
-	if fiberErr.Code == 404 {
-		data := struct {
-			ShowLogin    bool
-			StatusCode   int
-			ErrorMessage string
-			ErrorDetails string
-		}{
-			ShowLogin:    false,
-			StatusCode:   fiberErr.Code,
-			ErrorMessage: fiberErr.Message,
-			ErrorDetails: fiberErr.Error(),
-		}
-		filenames := []string{"root", "components/header", "pages/error"}
-
-		// Get views directory
-		wd, err := os.Getwd()
-		if err != nil {
-			return c.Status(500).SendString("Internal Server Error: " + err.Error())
-		}
-		viewsDir := wd + "/internal/views"
-		// Get template file paths
-		paths := make([]string, 0, len(filenames))
-		for _, filename := range filenames {
-			paths = append(paths, filepath.Join(viewsDir, filename+".html"))
-		}
-		// Render and send
-		tmpl, err := template.ParseFiles(paths...)
-		if err != nil {
-			return c.Status(500).SendString("Internal Server Error: " + err.Error())
-		}
-		if tmpl == nil {
-			return c.Status(500).SendString("Internal Server Error: nil template")
-		}
-		c.Set("Content-Type", "text/html")
-		err = tmpl.Execute(c.Response().BodyWriter(), data)
-		if err != nil {
-			return c.Status(500).SendString("Internal Server Error: " + err.Error())
-		}
-		return nil
-	}
-
-	// Handle other fiber.Error's
+	// Handle fiber.Error's
 	sendJsonErr := c.Status(fiberErr.Code).JSON(fiber.Map{
 		"status":  "error",
 		"code":    fiberErr.Code,
