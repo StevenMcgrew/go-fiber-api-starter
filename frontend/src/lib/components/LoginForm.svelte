@@ -12,10 +12,10 @@
         <h3>Log In</h3>
 
         <label for="email"><b>Email Address</b></label>
-        <input id="email" type="text" name="email" required />
+        <input id="email" type="text" name="email" autocomplete="email" required />
 
         <label for="password"><b>Password</b></label>
-        <input id="password" type="password" name="password" required />
+        <input id="password" type="password" name="password" autocomplete="current-password" required />
 
         <div class="form-btn-box">
             <button type="button" onclick={() => (S.showModal = null)}>Cancel</button>

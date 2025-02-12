@@ -50,3 +50,15 @@ dialog,
 .form-btn-box button {
     width: 120px;
 }
+
+.error-text {
+    color: #ff1f1f;
+}
+
+.success-text {
+    color: green;
+}
+
+.form-status-text {
+    margin: 20px 0px 0px 0px;
+}

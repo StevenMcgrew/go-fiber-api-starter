@@ -11,6 +11,7 @@ export const orient: Orientation = {
 }
 
 type Store = {
+    baseFetchUrl: string;
     orientLoginBtns: string;
     showLoginBtns: boolean;
     showLoginForm: boolean;
@@ -19,6 +20,7 @@ type Store = {
 }
 
 export const S: Store = $state({
+    baseFetchUrl: "http://127.0.0.1:8080/api/v1",
     orientLoginBtns: orient.horiz,
     showLoginBtns: true,
     showLoginForm: false,
