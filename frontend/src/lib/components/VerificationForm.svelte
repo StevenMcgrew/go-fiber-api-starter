@@ -10,22 +10,22 @@
 
     let isLoading = false;
     let error = null;
-    let data: any = null;
+    let response: any = null;
 
     function resetFormData() {
         formData.userId = S.user?.id;
         formData.verificationCode = "";
     }
 
-    function setUser(data: any) {
+    function setUser(res: any) {
         const user: User = {
-            token: data.token,
-            id: data.id,
-            email: data.email,
-            username: data.username,
-            role: data.role,
-            status: data.status,
-            imageUrl: data.imageUrl,
+            token: res.data.token,
+            id: res.data.id,
+            email: res.data.email,
+            username: res.data.username,
+            role: res.data.role,
+            status: res.data.status,
+            imageUrl: res.data.imageUrl,
         };
         S.user = user;
     }
@@ -35,15 +35,15 @@
         isLoading = true;
         error = null;
         try {
-            data = await submitVerification(formData);
+            response = await submitVerification(formData);
         } catch (err) {
             error = err;
         } finally {
             isLoading = false;
             if (error === false) {
                 resetFormData();
-                setUser(data);
-                S.showModal = null;
+                setUser(response);
+                S.showModal = "";
             }
         }
     }

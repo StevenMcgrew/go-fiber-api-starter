@@ -1,8 +1,7 @@
 <script lang="ts">
     import { submitSignUp } from "../../fetch";
     import { S } from "../../store.svelte";
-    import VerificationForm from "./VerificationForm.svelte";
-    import type { User } from "../../types";
+    import { modalComp, type User } from "../../types";
 
     let formData = {
         email: "",
@@ -13,7 +12,7 @@
 
     let isLoading = false;
     let error: any = null;
-    let data: any = null;
+    let response: any = null;
 
     function resetFormData() {
         formData.email = ""
@@ -22,15 +21,15 @@
         formData.passwordRepeat = ""
     }
 
-    function setUser(data: any) {
+    function setUser(res: any) {
         const user: User = {
             token: "",
-            id: data.id,
-            email: data.email,
-            username: data.username,
-            role: data.role,
-            status: data.status,
-            imageUrl: data.imageUrl,
+            id: res.data.id,
+            email: res.data.email,
+            username: res.data.username,
+            role: res.data.role,
+            status: res.data.status,
+            imageUrl: res.data.imageUrl,
         };
         S.user = user;
     }
@@ -41,15 +40,15 @@
         error = null;
 
         try {
-            data = await submitSignUp(formData);
+            response = await submitSignUp(formData);
         } catch (err) {
             error = err;
         } finally {
             isLoading = false;
             if (error === null) {
                 resetFormData()
-                setUser(data)
-                S.showModal = VerificationForm
+                setUser(response)
+                S.showModal = modalComp.VerificationForm
             }
         }
     }
@@ -98,7 +97,7 @@
         />
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => (S.showModal = null)}
+            <button type="button" onclick={() => (S.showModal = "")}
                 >Cancel</button
             >
             <button type="submit">Sign Up</button>

@@ -1,5 +1,3 @@
-import type { Component } from "svelte";
-
 type Orientation = {
     readonly horiz: string;
     readonly vert: string;
@@ -8,6 +6,18 @@ type Orientation = {
 export const orient: Orientation = {
     horiz: "horizontal",
     vert: "vertical",
+}
+
+type ModalComponents = {
+    readonly SignUpForm: string;
+    readonly VerificationForm: string;
+    readonly LoginForm: string;
+}
+
+export const modalComp: ModalComponents = {
+    SignUpForm: "SignUpForm",
+    VerificationForm: "VerificationForm",
+    LoginForm: "LoginForm",
 }
 
 export type User = {
@@ -25,8 +35,6 @@ export type Store = {
     baseStorageUrl: string;
     orientLoginBtns: string;
     showLoginBtns: boolean;
-    showLoginForm: boolean;
-    showSignUpForm: boolean;
-    showModal: Component | null;
-    user: User | null;
+    showModal: string;
+    user: User;
 }

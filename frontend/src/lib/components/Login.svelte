@@ -1,8 +1,6 @@
 <script lang="ts">
     import { S } from "../../store.svelte";
-    import { orient } from "../../types";
-    import LoginForm from "./LoginForm.svelte";
-    import SignUpForm from "./SignUpForm.svelte";
+    import { modalComp, orient } from "../../types";
 
     function logOut() {
         // TODO: logout
@@ -17,13 +15,13 @@
     {:else}
         <button
             class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
-            onclick={() => (S.showModal = LoginForm)}
+            onclick={() => (S.showModal = modalComp.LoginForm)}
         >
             Log In
         </button>
         <button
             class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
-            onclick={() => (S.showModal = SignUpForm)}
+            onclick={() => (S.showModal = modalComp.SignUpForm)}
         >
             Sign Up
         </button>

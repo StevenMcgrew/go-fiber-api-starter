@@ -30,7 +30,6 @@ func VerifyEmail(c *fiber.Ctx) error {
 	if err := c.BodyParser(body); err != nil {
 		return fiber.NewError(400, "Error parsing request body: "+err.Error())
 	}
-	fmt.Println("UserId:", body.UserId)
 
 	// Validate input
 	if !validation.IsOtpValid(body.VerificationCode) {
@@ -47,6 +46,9 @@ func VerifyEmail(c *fiber.Ctx) error {
 	if user.Status == userstatus.SUSPENDED || user.Status == userstatus.DELETED {
 		return fiber.NewError(400, "Cannot perform verification because user is: "+user.Status)
 	}
+	if user.Status == userstatus.VERIFIED {
+		return fiber.NewError(400, "User has already been verified")
+	}
 
 	// Verify otp matches
 	if body.VerificationCode != user.Otp {
@@ -57,6 +59,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	updatedUser, err := db.UpdateUser(body.UserId, &models.UserUpdate{
 		Email:    user.Email,
 		Username: user.Username,
+		Otp:      "",
 		Role:     user.Role,
 		Status:   userstatus.VERIFIED,
 		ImageUrl: user.ImageUrl,

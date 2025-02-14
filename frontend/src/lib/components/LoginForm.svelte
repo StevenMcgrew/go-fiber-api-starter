@@ -18,7 +18,7 @@
         <input id="password" type="password" name="password" autocomplete="current-password" required />
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => (S.showModal = null)}>Cancel</button>
+            <button type="button" onclick={() => (S.showModal = "")}>Cancel</button>
             <button type="submit">Log In</button>
         </div>
     </form>

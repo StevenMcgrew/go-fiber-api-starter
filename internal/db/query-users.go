@@ -87,6 +87,7 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	row, err := One(`UPDATE users
 					 SET email = @email,
 						 username = @username,
+						 otp = @otp,
 						 role = @role,
 						 status = @status,
 						 image_url = @imageUrl
@@ -94,6 +95,7 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 		pgx.NamedArgs{
 			"email":    userUpdate.Email,
 			"username": userUpdate.Username,
+			"otp":      userUpdate.Otp,
 			"role":     userUpdate.Role,
 			"status":   userUpdate.Status,
 			"imageUrl": userUpdate.ImageUrl,

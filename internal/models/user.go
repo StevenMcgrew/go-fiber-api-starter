@@ -28,6 +28,7 @@ type UserSignUp struct {
 type UserUpdate struct {
 	Email    string `json:"email" form:"email"`
 	Username string `json:"username" form:"username"`
+	Otp      string `json:"otp" form:"otp"`
 	Role     string `json:"role" form:"role"`
 	Status   string `json:"status" form:"status"`
 	ImageUrl string `json:"imageUrl" form:"imageUrl"`
