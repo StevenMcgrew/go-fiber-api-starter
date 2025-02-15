@@ -93,3 +93,12 @@ func IsInteger(str string) bool {
 		return (r < '0' || r > '9')
 	})
 }
+
+func HasAllowedUsernameChars(str string) bool {
+	return !strings.ContainsFunc(str, func(r rune) bool {
+		return (r < 'a' || r > 'z') &&
+			(r < 'A' || r > 'Z') &&
+			(r < '0' || r > '9') &&
+			r != '_'
+	})
+}

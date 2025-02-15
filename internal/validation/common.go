@@ -31,7 +31,7 @@ func IsUsernameValid(username string) bool {
 	if runeCount < 3 || runeCount > 20 {
 		return false
 	}
-	return utils.IsAlphanumeric(username)
+	return utils.HasAllowedUsernameChars(username)
 }
 
 func IsPasswordValid(password string) bool {
