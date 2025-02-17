@@ -1,25 +1,11 @@
 <script lang="ts">
-    import { submitSignUp } from "../../fetch";
+    import { submitForm } from "../../fetch";
     import { S } from "../../store.svelte";
     import { modalComp, type User } from "../../types";
-
-    let formData = {
-        email: "",
-        username: "",
-        password: "",
-        passwordRepeat: "",
-    };
 
     let isLoading = false;
     let error: any = null;
     let response: any = null;
-
-    function resetFormData() {
-        formData.email = ""
-        formData.username = ""
-        formData.password = ""
-        formData.passwordRepeat = ""
-    }
 
     function setUser(res: any) {
         const user: User = {
@@ -36,19 +22,24 @@
 
     async function onsubmit(e: SubmitEvent) {
         e.preventDefault();
+
         isLoading = true;
         error = null;
 
+        const form = e.currentTarget as HTMLFormElement;
+        const formData = new FormData(form);
+        const url = S.baseFetchUrl + "/users";
+
         try {
-            response = await submitSignUp(formData);
+            response = await submitForm(formData, url);
         } catch (err) {
             error = err;
         } finally {
             isLoading = false;
             if (error === null) {
-                resetFormData()
-                setUser(response)
-                S.showModal = modalComp.VerificationForm
+                form.reset();
+                setUser(response);
+                S.showModal = modalComp.VerificationForm;
             }
         }
     }
@@ -60,7 +51,6 @@
 
         <label for="email"><b>Email Address</b></label>
         <input
-            bind:value={formData.email}
             id="email"
             type="text"
             name="email"
@@ -70,7 +60,6 @@
 
         <label for="username"><b>Username</b></label>
         <input
-            bind:value={formData.username}
             id="username"
             type="text"
             name="username"
@@ -79,17 +68,10 @@
         />
 
         <label for="password"><b>Password</b></label>
-        <input
-            bind:value={formData.password}
-            id="password"
-            type="password"
-            name="password"
-            required
-        />
+        <input id="password" type="password" name="password" required />
 
         <label for="passwordRepeat"><b>Repeat Password</b></label>
         <input
-            bind:value={formData.passwordRepeat}
             id="passwordRepeat"
             type="password"
             name="passwordRepeat"

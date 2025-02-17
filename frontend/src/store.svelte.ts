@@ -1,7 +1,7 @@
-import { orient } from "./types";
-import type { Store, User } from "./types";
+import { orient, toastColor } from "./types";
+import type { Store, User, ToastData } from "./types";
 
-const initialUser: User = {
+export const emptyUser: User = {
     token: "",
     id: 0,
     email: "",
@@ -11,13 +11,19 @@ const initialUser: User = {
     imageUrl: "",
 }
 
+export const emptyToast: ToastData = {
+    color: toastColor.grey,
+    text: "",
+}
+
 export const S: Store = $state({
     baseFetchUrl: "http://127.0.0.1:8080/api/v1",
     baseStorageUrl: "http://127.0.0.1:8080/temp-storage",
     orientLoginBtns: orient.horiz,
     showLoginBtns: true,
     showModal: "",
-    user: initialUser,
+    showToast: emptyToast,
+    user: emptyUser,
 })
 
 function updateObjectValues<T extends object>(obj: T, updates: Partial<T>) {

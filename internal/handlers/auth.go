@@ -21,7 +21,7 @@ import (
 func VerifyEmail(c *fiber.Ctx) error {
 	// Shape of request body
 	type reqBody struct {
-		UserId           uint   `json:"userId" form:"userId"`
+		Email            string `json:"email" form:"email"`
 		VerificationCode string `json:"verificationCode" form:"verificationCode"`
 	}
 	body := &reqBody{}
@@ -37,7 +37,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	}
 
 	// Get user
-	user, err := db.GetUserById(body.UserId)
+	user, err := db.GetUserByEmail(body.Email)
 	if err != nil {
 		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
@@ -47,7 +47,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 		return fiber.NewError(400, "Cannot perform verification because user is: "+user.Status)
 	}
 	if user.Status == userstatus.VERIFIED {
-		return fiber.NewError(400, "User has already been verified")
+		return fiber.NewError(400, "User's email has already been verified")
 	}
 
 	// Verify otp matches
@@ -56,7 +56,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	}
 
 	// Save to db
-	updatedUser, err := db.UpdateUser(body.UserId, &models.UserUpdate{
+	updatedUser, err := db.UpdateUser(user.Id, &models.UserUpdate{
 		Email:    user.Email,
 		Username: user.Username,
 		Otp:      "",
@@ -68,11 +68,23 @@ func VerifyEmail(c *fiber.Ctx) error {
 		return fiber.NewError(500, "Error updating user in database: "+err.Error())
 	}
 
-	// Serialize updated user
+	// Create JWT
+	jwt, err := utils.CreateJWT(&user)
+	if err != nil {
+		return fiber.NewError(500, "Error creating JWT: "+err.Error())
+	}
+
+	// Serialize user
 	userResponse := serialization.UserResponse(&updatedUser)
 
-	// Response
-	return utils.SendSuccessJSON(c, 200, userResponse, "Verified")
+	// Create UserLoginResponse
+	userLoginResponse := &models.UserLoginResponse{
+		Token:        jwt,
+		UserResponse: *userResponse,
+	}
+
+	// Send user and jwt
+	return utils.SendSuccessJSON(c, 200, userLoginResponse, "Verified")
 }
 
 func ResendEmailVerification(c *fiber.Ctx) error {

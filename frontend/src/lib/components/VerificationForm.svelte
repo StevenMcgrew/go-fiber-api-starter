@@ -1,21 +1,11 @@
 <script lang="ts">
-    import { submitVerification } from "../../fetch";
+    import { submitForm } from "../../fetch";
     import { S } from "../../store.svelte";
     import type { User } from "../../types";
 
-    let formData = {
-        userId: S.user?.id,
-        verificationCode: "",
-    };
-
     let isLoading = false;
-    let error = null;
+    let error: any = null;
     let response: any = null;
-
-    function resetFormData() {
-        formData.userId = S.user?.id;
-        formData.verificationCode = "";
-    }
 
     function setUser(res: any) {
         const user: User = {
@@ -32,16 +22,22 @@
 
     async function onsubmit(e: SubmitEvent) {
         e.preventDefault();
+
         isLoading = true;
         error = null;
+
+        const form = e.currentTarget as HTMLFormElement
+        const formData = new FormData(form)
+        const url = S.baseFetchUrl + "/auth/verify-email"
+
         try {
-            response = await submitVerification(formData);
+            response = await submitForm(formData, url);
         } catch (err) {
             error = err;
         } finally {
             isLoading = false;
-            if (error === false) {
-                resetFormData();
+            if (error === null) {
+                form.reset()
                 setUser(response);
                 S.showModal = "";
             }
@@ -56,17 +52,34 @@
             A verification code was sent to your email address. Please check
             your email and enter the code here:
         </p>
-        <label for="verificationCode">Verification Code</label>
+
+        <label for="email"><b>Email Address</b></label>
         <input
-            bind:value={formData.verificationCode}
+            id="email"
+            type="text"
+            name="email"
+            value={S.user?.email}
+            required
+        />
+
+        <label for="verificationCode"><b>Verification Code</b></label>
+        <input
             id="verificationCode"
             name="verificationCode"
             type="text"
             required
             maxlength="6"
         />
+
         <div class="form-btn-box">
             <button type="submit">Verify</button>
         </div>
+        {#if isLoading}
+            <p class="form-status-text">Submitting...</p>
+        {:else if error}
+            <p class="error-text form-status-text">
+                Error: {error.message}
+            </p>
+        {/if}
     </form>
 </div>
