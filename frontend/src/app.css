@@ -63,3 +63,11 @@ dialog,
     align-self: center;
     margin: 20px 0px 0px 0px;
 }
+
+.more-options-txt {
+    background: none;
+    text-transform: none;
+    text-decoration: underline;
+    margin-top: 1.2rem;
+    color: var(--nc-lk-1);
+}

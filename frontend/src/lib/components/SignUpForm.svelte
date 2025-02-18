@@ -98,13 +98,3 @@
         >
     </form>
 </div>
-
-<style>
-    .more-options-txt {
-        background: none;
-        text-transform: none;
-        text-decoration: underline;
-        padding-top: 1.5rem;
-        color: var(--nc-lk-1);
-    }
-</style>

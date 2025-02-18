@@ -1,7 +1,7 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
     import { S } from "../../store.svelte";
-    import type { User } from "../../types";
+    import { type User, toastColor } from "../../types";
 
     let isLoading = false;
     let error: any = null;
@@ -39,6 +39,10 @@
             if (error === null) {
                 form.reset()
                 setUser(response);
+                S.showToast = {
+                    color: toastColor.green,
+                    text: "Verified! You are now logged in."
+                }
                 S.showModal = "";
             }
         }
