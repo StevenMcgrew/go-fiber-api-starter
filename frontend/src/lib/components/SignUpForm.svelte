@@ -91,5 +91,20 @@
                 Error: {error.message}
             </p>
         {/if}
+        <button
+            class="more-options-txt"
+            onclick={() => (S.showModal = modalComp.VerificationForm)}
+            >Enter a verification code</button
+        >
     </form>
 </div>
+
+<style>
+    .more-options-txt {
+        background: none;
+        text-transform: none;
+        text-decoration: underline;
+        padding-top: 1.5rem;
+        color: var(--nc-lk-1);
+    }
+</style>

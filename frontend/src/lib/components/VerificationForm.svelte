@@ -49,7 +49,7 @@
     <form {onsubmit} class="auth-form">
         <h3>Verification</h3>
         <p>
-            A verification code was sent to your email address. Please check
+            During sign-up a verification code is sent to your email address. Please check
             your email and enter the code here:
         </p>
 
