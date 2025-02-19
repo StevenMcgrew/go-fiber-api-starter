@@ -1,12 +1,13 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { S } from "../../store.svelte";
+    import { store } from "../../store.svelte";
     import { type User, toastColor } from "../../types";
-    import Toast from "./Toast.svelte";
 
     let isLoading = false;
     let error: any = null;
     let response: any = null;
+    let emailInputValue = "";
+    let passwordInputValue = "";
 
     function setUser(res: any) {
         const user: User = {
@@ -18,7 +19,12 @@
             status: res.data.status,
             imageUrl: res.data.imageUrl,
         };
-        S.user = user;
+        $store.user = user;
+    }
+
+    function customFormReset() {
+        emailInputValue = "";
+        passwordInputValue = "";
     }
 
     async function onsubmit(e: SubmitEvent) {
@@ -29,7 +35,7 @@
 
         const form = e.currentTarget as HTMLFormElement;
         const formData = new FormData(form);
-        const url = S.baseFetchUrl + "/auth/login";
+        const url = $store.baseFetchUrl + "/auth/login";
 
         try {
             response = await submitForm(formData, url);
@@ -38,13 +44,13 @@
         } finally {
             isLoading = false;
             if (error === null) {
-                form.reset();
+                customFormReset();
                 setUser(response);
-                S.showToast = {
+                $store.showToast = {
                     color: toastColor.green,
                     text: "Logged In!",
                 };
-                S.showModal = "";
+                $store.showModal = "";
             }
         }
     }
@@ -61,6 +67,7 @@
             name="email"
             autocomplete="email"
             required
+            bind:value={emailInputValue}
         />
 
         <label for="password"><b>Password</b></label>
@@ -70,10 +77,19 @@
             name="password"
             autocomplete="current-password"
             required
+            bind:value={passwordInputValue}
         />
 
+        <label class="ckbox-label">
+            <input
+                id="dummyToPreventWarning"
+                type="checkbox"
+                bind:checked={$store.stayLoggedIn}
+            /> Stay logged in
+        </label>
+
         <div class="form-btn-box">
-            <button type="button" onclick={() => (S.showModal = "")}
+            <button type="button" onclick={() => ($store.showModal = "")}
                 >Cancel</button
             >
             <button type="submit">Log In</button>
@@ -85,9 +101,13 @@
                 Error: {error.message}
             </p>
         {/if}
-        <button
-            class="more-options-txt"
-            >Forgot password</button
-        >
+        <button class="more-options-txt">Forgot password</button>
     </form>
 </div>
+
+<style>
+    .ckbox-label {
+        padding: 10px 0px 0px 5px;
+        font-size: 14px;
+    }
+</style>

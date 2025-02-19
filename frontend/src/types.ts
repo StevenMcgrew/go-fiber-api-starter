@@ -57,4 +57,5 @@ export type Store = {
     showModal: string;
     showToast: ToastData;
     user: User;
+    stayLoggedIn: boolean;
 }

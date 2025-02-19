@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { S } from "../../store.svelte";
+    import { store } from "../../store.svelte";
     import { modalComp } from "../../types";
     import LoginForm from "./LoginForm.svelte";
     import SignUpForm from "./SignUpForm.svelte";
@@ -8,7 +8,7 @@
     let dialog: HTMLDialogElement;
 
     $effect(() => {
-        if (S.showModal === "") {
+        if ($store.showModal === "") {
             dialog.close();
         } else {
             dialog.showModal();
@@ -17,12 +17,12 @@
 </script>
 
 <dialog bind:this={dialog}>
-    <button class="close-btn" onclick={() => (S.showModal = "")}>×</button>
-    {#if S.showModal == modalComp.LoginForm}
+    <button class="close-btn" onclick={() => ($store.showModal = "")}>×</button>
+    {#if $store.showModal == modalComp.LoginForm}
         <LoginForm />
-    {:else if S.showModal == modalComp.SignUpForm}
+    {:else if $store.showModal == modalComp.SignUpForm}
         <SignUpForm />
-    {:else if S.showModal == modalComp.VerificationForm}
+    {:else if $store.showModal == modalComp.VerificationForm}
         <VerificationForm />
     {:else}
         <p>Missing content</p>

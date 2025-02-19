@@ -1,6 +1,6 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { S } from "../../store.svelte";
+    import { store } from "../../store.svelte";
     import { modalComp, type User } from "../../types";
 
     let isLoading = false;
@@ -17,7 +17,7 @@
             status: res.data.status,
             imageUrl: res.data.imageUrl,
         };
-        S.user = user;
+        $store.user = user;
     }
 
     async function onsubmit(e: SubmitEvent) {
@@ -28,7 +28,7 @@
 
         const form = e.currentTarget as HTMLFormElement;
         const formData = new FormData(form);
-        const url = S.baseFetchUrl + "/users";
+        const url = $store.baseFetchUrl + "/users";
 
         try {
             response = await submitForm(formData, url);
@@ -39,7 +39,7 @@
             if (error === null) {
                 form.reset();
                 setUser(response);
-                S.showModal = modalComp.VerificationForm;
+                $store.showModal = modalComp.VerificationForm;
             }
         }
     }
@@ -79,7 +79,7 @@
         />
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => (S.showModal = "")}
+            <button type="button" onclick={() => ($store.showModal = "")}
                 >Cancel</button
             >
             <button type="submit">Sign Up</button>
@@ -93,7 +93,7 @@
         {/if}
         <button
             class="more-options-txt"
-            onclick={() => (S.showModal = modalComp.VerificationForm)}
+            onclick={() => ($store.showModal = modalComp.VerificationForm)}
             >Enter a verification code</button
         >
     </form>

@@ -71,3 +71,7 @@ dialog,
     margin-top: 1.2rem;
     color: var(--nc-lk-1);
 }
+
+.more-options-txt:hover {
+    background-color: transparent;
+}

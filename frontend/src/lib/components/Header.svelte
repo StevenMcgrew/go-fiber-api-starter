@@ -1,15 +1,15 @@
 <script lang="ts">
     import NavBar from "./NavBar.svelte";
     import Login from "./Login.svelte";
-    import { S } from "../../store.svelte";
+    import { store } from "../../store.svelte";
     import { orient } from "../../types";
 
     let headerWidth: number = $state(570);
     $effect(() => {
         if (headerWidth < 570) {
-            S.orientLoginBtns = orient.vert
+            $store.orientLoginBtns = orient.vert
         } else {
-            S.orientLoginBtns = orient.horiz
+            $store.orientLoginBtns = orient.horiz
         }
     })
 </script>
@@ -17,7 +17,7 @@
 <header class="comp-header" bind:clientWidth={headerWidth}>
     <div class="upper-box">
         <a class="h1-anchor" href="/"><h1>Svelte SPA Starter</h1></a>
-        {#if S.showLoginBtns}
+        {#if $store.showLoginBtns}
             <Login/>
         {/if}
     </div>

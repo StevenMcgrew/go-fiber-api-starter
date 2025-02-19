@@ -1,31 +1,32 @@
 <script lang="ts">
-    import { S, emptyUser } from "../../store.svelte";
+    import { store, emptyUser } from "../../store.svelte";
     import { modalComp, orient } from "../../types";
 
     function logOut() {
-        S.user = emptyUser;
+        $store.user = emptyUser;
+        $store.stayLoggedIn = false;
     }
 </script>
 
-<div class="btn-box {S.orientLoginBtns === orient.vert ? orient.vert : ''}">
-    {#if S.user?.token}
-        <p class="username-txt">{S.user.username}</p>
+<div class="btn-box {$store.orientLoginBtns === orient.vert ? orient.vert : ''}">
+    {#if $store.user?.token}
+        <p class="username-txt">{$store.user.username}</p>
         <img
             class="user-img"
-            src={S.baseStorageUrl + S.user.imageUrl}
+            src={$store.baseStorageUrl + $store.user.imageUrl}
             alt="user"
         />
         <button onclick={logOut}>Log Out</button>
     {:else}
         <button
-            class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
-            onclick={() => (S.showModal = modalComp.LoginForm)}
+            class={$store.orientLoginBtns === orient.vert ? "btn-width" : ""}
+            onclick={() => ($store.showModal = modalComp.LoginForm)}
         >
             Log In
         </button>
         <button
-            class={S.orientLoginBtns === orient.vert ? "btn-width" : ""}
-            onclick={() => (S.showModal = modalComp.SignUpForm)}
+            class={$store.orientLoginBtns === orient.vert ? "btn-width" : ""}
+            onclick={() => ($store.showModal = modalComp.SignUpForm)}
         >
             Sign Up
         </button>

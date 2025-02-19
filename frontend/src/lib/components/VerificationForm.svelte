@@ -1,6 +1,6 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { S } from "../../store.svelte";
+    import { store } from "../../store.svelte";
     import { type User, toastColor } from "../../types";
 
     let isLoading = false;
@@ -17,7 +17,7 @@
             status: res.data.status,
             imageUrl: res.data.imageUrl,
         };
-        S.user = user;
+        $store.user = user;
     }
 
     async function onsubmit(e: SubmitEvent) {
@@ -28,7 +28,7 @@
 
         const form = e.currentTarget as HTMLFormElement
         const formData = new FormData(form)
-        const url = S.baseFetchUrl + "/auth/verify-email"
+        const url = $store.baseFetchUrl + "/auth/verify-email"
 
         try {
             response = await submitForm(formData, url);
@@ -39,11 +39,11 @@
             if (error === null) {
                 form.reset()
                 setUser(response);
-                S.showToast = {
+                $store.showToast = {
                     color: toastColor.green,
                     text: "Verified! You are now logged in."
                 }
-                S.showModal = "";
+                $store.showModal = "";
             }
         }
     }
@@ -62,7 +62,7 @@
             id="email"
             type="text"
             name="email"
-            value={S.user?.email}
+            value={$store.user?.email}
             required
         />
 
