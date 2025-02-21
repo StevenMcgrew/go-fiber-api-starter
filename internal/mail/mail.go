@@ -9,7 +9,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func SendEmailVerification(to string, otp string) error {
+func EmailTheVerificationCode(to string, otp string) error {
 	err := SendMail(to, config.EMAIL_FROM, "Welcome!",
 		fmt.Sprintf(EmailVerificationTemplate, otp))
 	if err != nil {
@@ -18,9 +18,9 @@ func SendEmailVerification(to string, otp string) error {
 	return nil
 }
 
-func SendPasswordReset(to string, link string) error {
+func EmailThePasswordResetCode(to string, otp string) error {
 	err := SendMail(to, config.EMAIL_FROM, "Reset Password",
-		fmt.Sprintf(ResetPasswordTemplate, link, link))
+		fmt.Sprintf(ResetPasswordTemplate, otp))
 	if err != nil {
 		return err
 	}

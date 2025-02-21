@@ -52,7 +52,7 @@
         <label for="email"><b>Email Address</b></label>
         <input
             id="email"
-            type="text"
+            type="email"
             name="email"
             autocomplete="email"
             required

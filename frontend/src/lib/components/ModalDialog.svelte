@@ -1,7 +1,9 @@
 <script lang="ts">
     import { store } from "../../store.svelte";
     import { modalComp } from "../../types";
+    import ForgotPasswordForm from "./ForgotPasswordForm.svelte";
     import LoginForm from "./LoginForm.svelte";
+    import ResetPasswordForm from "./ResetPasswordForm.svelte";
     import SignUpForm from "./SignUpForm.svelte";
     import VerificationForm from "./VerificationForm.svelte";
 
@@ -24,6 +26,10 @@
         <SignUpForm />
     {:else if $store.showModal == modalComp.VerificationForm}
         <VerificationForm />
+    {:else if $store.showModal == modalComp.ForgotPasswordForm}
+        <ForgotPasswordForm />
+    {:else if $store.showModal == modalComp.ResetPasswordForm}
+        <ResetPasswordForm />
     {:else}
         <p>Missing content</p>
     {/if}

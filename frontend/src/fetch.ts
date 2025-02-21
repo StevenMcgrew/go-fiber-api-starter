@@ -1,7 +1,7 @@
-export async function submitForm(formData: FormData, url: string) {
+export async function submitForm(formData: FormData, url: string, _method: string = "POST") {
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            method: _method,
             body: formData
         });
         const data = await response.json();

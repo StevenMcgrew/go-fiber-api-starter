@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { submitForm } from "../../fetch";
     import { store } from "../../store.svelte";
+    import { submitForm } from "../../fetch";
     import { type User, toastColor } from "../../types";
 
     let isLoading = false;
@@ -28,7 +28,7 @@
 
         const form = e.currentTarget as HTMLFormElement;
         const formData = new FormData(form);
-        const url = $store.baseFetchUrl + "/auth/verify-email";
+        const url = $store.baseFetchUrl + "/auth/reset-password/update";
 
         try {
             response = await submitForm(formData, url);
@@ -41,36 +41,19 @@
                 setUser(response);
                 $store.showToast = {
                     color: toastColor.green,
-                    text: "Verified! You are now logged in.",
+                    text: "Password Reset! You are now logged in.",
                 };
                 $store.showModal = "";
             }
-        }
-    }
-
-    async function sendCodeAgain() {
-        isLoading = true;
-        error = null;
-
-        const formData = new FormData();
-        formData.append("email", $store.user.email);
-        const url = $store.baseFetchUrl + "/auth/resend-email-verification";
-
-        try {
-            await submitForm(formData, url);
-        } catch (err) {
-            error = err;
-        } finally {
-            isLoading = false;
         }
     }
 </script>
 
 <div class="form-wrapper">
     <form {onsubmit} class="auth-form">
-        <h3>Verification</h3>
+        <h3>Reset Password</h3>
         <p>
-            During sign-up a verification code is sent to your email address.
+            A reset code was sent to your email address.
             Please check your email and enter the code here:
         </p>
 
@@ -83,17 +66,31 @@
             required
         />
 
-        <label for="verificationCode"><b>Verification Code</b></label>
+        <label for="resetCode"><b>Reset Code</b></label>
         <input
-            id="verificationCode"
-            name="verificationCode"
+            id="resetCode"
+            name="resetCode"
             type="text"
             required
             maxlength="6"
         />
 
+        <label for="newPassword"><b>New Password</b></label>
+        <input id="newPassword" type="password" name="newPassword" required />
+
+        <label for="repeatNewPassword"><b>Repeat New Password</b></label>
+        <input
+            id="repeatNewPassword"
+            type="password"
+            name="repeatNewPassword"
+            required
+        />
+
         <div class="form-btn-box">
-            <button type="submit">Verify</button>
+            <button type="button" onclick={() => ($store.showModal = "")}
+                >Cancel</button
+            >
+            <button type="submit">Reset Password</button>
         </div>
         {#if isLoading}
             <p class="form-status-text">Submitting...</p>
@@ -102,24 +99,5 @@
                 Error: {error.message}
             </p>
         {/if}
-        <p class="send-again-txt">
-            If you don't receive the email after a few minutes, check your junk
-            mail folder or...
-        </p>
-        <button
-            type="button"
-            onclick={sendCodeAgain}
-            class="more-options-txt send-again-btn">Send code again</button
-        >
     </form>
 </div>
-
-<style>
-    .send-again-txt {
-        margin: 2rem 0rem 0rem 0rem;
-        font-size: 10px;
-    }
-    .send-again-btn {
-        margin-top: 0.3rem;
-    }
-</style>

@@ -41,7 +41,6 @@
 
     $effect(() => {
         flattenedStore = flattenObject($store);
-        localStorage.setItem("store", JSON.stringify($store));
     });
 </script>
 

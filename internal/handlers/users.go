@@ -17,6 +17,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -68,7 +69,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Send verification email
-	err = mail.SendEmailVerification(user.Email, user.Otp)
+	err = mail.EmailTheVerificationCode(user.Email, user.Otp)
 	if err != nil {
 		return fiber.NewError(500, "Saved new user, but an error occurred when sending email verification: "+err.Error())
 	}
@@ -122,6 +123,9 @@ func GetAllUsers(c *fiber.Ctx) error {
 	// Get users
 	users, sql, err := db.GetUsers(page, perPage, query)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return fiber.NewError(400, "No user records found in database")
+		}
 		return fiber.NewError(500, "Error getting users from database: "+err.Error())
 	}
 
@@ -425,7 +429,7 @@ func UpdateEmail(c *fiber.Ctx) error {
 	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
 
 	// Send verification email
-	err = mail.SendEmailVerification(body.Email, link)
+	err = mail.EmailTheVerificationCode(body.Email, link)
 	if err != nil {
 		return fiber.NewError(500, "Error sending email: "+err.Error())
 	}

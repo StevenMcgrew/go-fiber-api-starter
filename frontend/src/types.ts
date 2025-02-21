@@ -26,12 +26,16 @@ type ModalComponents = {
     readonly SignUpForm: string;
     readonly VerificationForm: string;
     readonly LoginForm: string;
+    readonly ForgotPasswordForm: string;
+    readonly ResetPasswordForm: string;
 }
 
 export const modalComp: ModalComponents = {
     SignUpForm: "SignUpForm",
     VerificationForm: "VerificationForm",
     LoginForm: "LoginForm",
+    ForgotPasswordForm: "ForgotPasswordForm",
+    ResetPasswordForm: "ResetPasswordForm",
 }
 
 export type User = {
@@ -57,5 +61,4 @@ export type Store = {
     showModal: string;
     showToast: ToastData;
     user: User;
-    stayLoggedIn: boolean;
 }

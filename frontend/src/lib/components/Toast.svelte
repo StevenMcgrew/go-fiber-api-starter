@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { store } from "../../store.svelte";
+    import { emptyToast, store } from "../../store.svelte";
 
     $effect(() => {
         if ($store.showToast.text) {
             // After 2.9 sec (fadeout finished), reset toast
             setTimeout(function () {
-                $store.showToast.text = "";
-                $store.showToast.color = "grey";
+                $store.showToast = emptyToast;
             }, 2900);
         }
     });

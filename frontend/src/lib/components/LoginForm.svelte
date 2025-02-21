@@ -1,15 +1,16 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { store } from "../../store.svelte";
-    import { type User, toastColor } from "../../types";
+    import { store, switchToLocalStorage } from "../../store.svelte";
+    import { type User, modalComp, toastColor } from "../../types";
 
     let isLoading = false;
     let error: any = null;
     let response: any = null;
     let emailInputValue = "";
     let passwordInputValue = "";
+    let stayLoggedIn = false;
 
-    function setUser(res: any) {
+    function setUser(res: any, stay: boolean) {
         const user: User = {
             token: res.data.token,
             id: res.data.id,
@@ -20,6 +21,9 @@
             imageUrl: res.data.imageUrl,
         };
         $store.user = user;
+        if (stay) {
+            switchToLocalStorage();
+        }
     }
 
     function customFormReset() {
@@ -45,7 +49,7 @@
             isLoading = false;
             if (error === null) {
                 customFormReset();
-                setUser(response);
+                setUser(response, stayLoggedIn);
                 $store.showToast = {
                     color: toastColor.green,
                     text: "Logged In!",
@@ -63,7 +67,7 @@
         <label for="email"><b>Email Address</b></label>
         <input
             id="email"
-            type="text"
+            type="email"
             name="email"
             autocomplete="email"
             required
@@ -84,7 +88,7 @@
             <input
                 id="dummyToPreventWarning"
                 type="checkbox"
-                bind:checked={$store.stayLoggedIn}
+                bind:checked={stayLoggedIn}
             /> Stay logged in
         </label>
 
@@ -101,7 +105,11 @@
                 Error: {error.message}
             </p>
         {/if}
-        <button class="more-options-txt">Forgot password</button>
+        <button
+            class="more-options-txt"
+            onclick={() => ($store.showModal = modalComp.ForgotPasswordForm)}
+            >Forgot password</button
+        >
     </form>
 </div>
 

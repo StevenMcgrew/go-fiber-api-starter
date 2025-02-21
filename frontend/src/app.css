@@ -37,8 +37,7 @@ dialog,
 }
 
 .auth-form h3 {
-    padding-top: 7px;
-    padding-bottom: 20px;
+    padding: 7px 25px 20px 0px;
 }
 
 .form-btn-box {
@@ -48,7 +47,7 @@ dialog,
 }
 
 .form-btn-box button {
-    width: 120px;
+    min-width: 90px;
 }
 
 .error-text {
@@ -73,5 +72,5 @@ dialog,
 }
 
 .more-options-txt:hover {
-    background-color: transparent;
+    background: transparent;
 }

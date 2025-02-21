@@ -1,10 +1,9 @@
 <script lang="ts">
-    import { store, emptyUser } from "../../store.svelte";
+    import { store, clearStorageAndReload } from "../../store.svelte";
     import { modalComp, orient } from "../../types";
 
     function logOut() {
-        $store.user = emptyUser;
-        $store.stayLoggedIn = false;
+        clearStorageAndReload();
     }
 </script>
 
