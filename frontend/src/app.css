@@ -40,10 +40,18 @@ dialog,
     padding: 7px 25px 20px 0px;
 }
 
+.form-input {
+    margin-bottom: 0;
+}
+
+.form-input-warning {
+    font-size: 10px;
+    min-height: 21px;
+}
+
 .form-btn-box {
     display: flex;
     justify-content: space-evenly;
-    padding-top: 23px;
 }
 
 .form-btn-box button {

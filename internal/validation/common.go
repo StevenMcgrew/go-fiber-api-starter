@@ -16,11 +16,11 @@ func IsOtpValid(otp string) bool {
 }
 
 func IsEmailValid(email string) bool {
-	if !strings.Contains(email, "@") {
-		return false
-	}
 	runeCount := utf8.RuneCountInString(email)
 	if runeCount < 3 || runeCount > 320 {
+		return false
+	}
+	if !strings.Contains(email, "@") {
 		return false
 	}
 	return true
