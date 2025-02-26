@@ -60,5 +60,6 @@ export type Store = {
     showLoginBtns: boolean;
     showModal: string;
     showToast: ToastData;
+    newEmailAddress: string;
     user: User;
 }

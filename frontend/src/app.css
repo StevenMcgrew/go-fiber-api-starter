@@ -59,7 +59,7 @@ dialog,
 }
 
 .error-text {
-    color: #ff1f1f;
+    color: rgb(236, 75, 75);
 }
 
 .success-text {
@@ -81,4 +81,12 @@ dialog,
 
 .more-options-txt:hover {
     background: transparent;
+}
+
+.user-img {
+    margin: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
 }

@@ -39,6 +39,7 @@
             if (error === null) {
                 form.reset();
                 setUser(response);
+                $store.newEmailAddress = "";
                 $store.showToast = {
                     color: toastColor.green,
                     text: "Verified! You are now logged in.",
@@ -79,7 +80,7 @@
             id="email"
             type="email"
             name="email"
-            bind:value={$store.user.email}
+            bind:value={$store.newEmailAddress}
             required
         />
 

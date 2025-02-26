@@ -1,20 +1,26 @@
 <script lang="ts">
+    import { link } from "svelte-spa-router";
     import { store, clearStorageAndReload } from "../../store.svelte";
     import { modalComp, orient } from "../../types";
 
     function logOut() {
         clearStorageAndReload();
     }
+
 </script>
 
-<div class="btn-box {$store.orientLoginBtns === orient.vert ? orient.vert : ''}">
+<div
+    class="btn-box {$store.orientLoginBtns === orient.vert ? orient.vert : ''}"
+>
     {#if $store.user?.token}
         <p class="username-txt">{$store.user.username}</p>
-        <img
-            class="user-img"
-            src={$store.baseStorageUrl + $store.user.imageUrl}
-            alt="user"
-        />
+        <a use:link href="/account">
+            <img
+                class="user-img"
+                src={$store.baseStorageUrl + $store.user.imageUrl}
+                alt="user"
+            />
+        </a>
         <button onclick={logOut}>Log Out</button>
     {:else}
         <button
@@ -43,11 +49,6 @@
     }
     .btn-width {
         width: 89px;
-    }
-    .user-img {
-        margin: 0;
-        width: 40px;
-        height: 40px;
     }
     .username-txt {
         margin: 0;

@@ -1,8 +1,16 @@
-export const submitForm = async (formData: FormData, url: string, _method: string = "POST") => {
+export const submitForm = async (
+        formData: FormData,
+        url: string,
+        _method: string = "POST",
+        token: string = "none"
+    ) => {
     try {
         const response = await fetch(url, {
             method: _method,
-            body: formData
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
         });
         const data = await response.json();
         if (data.status !== "success") {

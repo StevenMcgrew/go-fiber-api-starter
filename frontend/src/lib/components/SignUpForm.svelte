@@ -107,6 +107,7 @@
             if (error === null) {
                 form.reset();
                 setUser(response);
+                $store.newEmailAddress = response.data.email;
                 $store.showModal = modalComp.VerificationForm;
             }
         }

@@ -27,6 +27,7 @@ function createDefaultStore(): Store {
         showLoginBtns: true,
         showModal: "",
         showToast: emptyToast,
+        newEmailAddress: "",
         user: emptyUser,
     }
     return s
