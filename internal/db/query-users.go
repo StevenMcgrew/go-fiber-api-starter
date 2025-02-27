@@ -125,6 +125,13 @@ func UpdatePassword(id uint, password string) (models.User, error) {
 	return row, err
 }
 
+func UpdateOtp(id uint, otp string) (models.User, error) {
+	row, err := One(`UPDATE users SET otp = @otp WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"otp": otp, "id": id},
+		&models.User{})
+	return row, err
+}
+
 func SoftDeleteUser(id uint) (models.User, error) {
 	row, err := One(`UPDATE users
 					SET status = @status, deleted_at = CURRENT_TIMESTAMP

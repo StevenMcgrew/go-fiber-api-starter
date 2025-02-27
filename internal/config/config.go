@@ -104,7 +104,7 @@ var FiberCorsConfig = cors.Config{
 	AllowHeaders:     "Accept,Authorization,Content-Type",
 	AllowCredentials: false, // credentials require explicit origins
 	ExposeHeaders:    "",
-	MaxAge:           300,
+	MaxAge:           7200,
 }
 
 // Fiber Static config options: https://docs.gofiber.io/api/app

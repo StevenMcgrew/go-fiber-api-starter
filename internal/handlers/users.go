@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"go-fiber-api-starter/internal/config"
 	"go-fiber-api-starter/internal/db"
 	"go-fiber-api-starter/internal/enums/userrole"
 	"go-fiber-api-starter/internal/enums/userstatus"
@@ -13,10 +12,8 @@ import (
 	"go-fiber-api-starter/internal/validation"
 	"math"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -352,7 +349,7 @@ func UpdatePassword(c *fiber.Ctx) error {
 		return fiber.NewError(500, `Type assertion failed for c.Locals("inquirer")`)
 	}
 
-	// Check password, if not admin (this is an extra security check)
+	// If not admin, check password (this is an extra security check)
 	if inquirer.Role != userrole.ADMIN {
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.CurrentPassword)); err != nil {
 			return fiber.NewError(500, "CurrentPassword input doesn't match saved password")
@@ -381,7 +378,7 @@ func UpdatePassword(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 200, userResponse, "Saved password to database")
 }
 
-func UpdateEmail(c *fiber.Ctx) error {
+func ChangeEmailRequest(c *fiber.Ctx) error {
 	// Shape of request body
 	type reqBody struct {
 		Email string `json:"email" form:"email"`
@@ -404,38 +401,80 @@ func UpdateEmail(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	// Parse userId from path
-	id, err := c.ParamsInt("userId")
-	if err != nil || id == 0 {
-		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
-	userId := uint(id)
 
-	// Create JWT for email verification link
-	claims := &models.JwtVerifyEmail{
-		UserId: userId,
-		Email:  body.Email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	jwtString, err := token.SignedString([]byte(config.API_SECRET))
+	// Save an OTP to user in database
+	otp := utils.RandomSixDigitStr()
+	updatedUser, err := db.UpdateOtp(user.Id, otp)
 	if err != nil {
-		return fiber.NewError(500, "Error creating JWT: "+err.Error())
+		if err == pgx.ErrNoRows {
+			return fiber.NewError(400, "User not found in database")
+		}
+		return fiber.NewError(500, "Error getting user from database: "+err.Error())
 	}
 
-	// Create email verification link
-	link := fmt.Sprintf("%s/api/v1/auth/verify-email/?token=%s", config.API_BASE_URL, jwtString)
-
-	// Send verification email
-	err = mail.EmailTheVerificationCode(body.Email, link)
+	// Send the OTP email
+	err = mail.EmailTheOtp(body.Email, updatedUser.Otp)
 	if err != nil {
 		return fiber.NewError(500, "Error sending email: "+err.Error())
 	}
 
 	// Send response
-	return utils.SendSuccessJSON(c, 200, nil, "A verification link has been emailed to "+body.Email)
+	return utils.SendSuccessJSON(c, 200, body.Email, "A one-time passcode has been emailed to "+body.Email)
+}
+
+func ChangeEmailUpdate(c *fiber.Ctx) error {
+	// Shape of request body
+	type reqBody struct {
+		Email string `json:"email" form:"email"`
+		Otp   string `json:"otp" form:"otp"`
+	}
+	body := &reqBody{}
+
+	// Parse body
+	if err := c.BodyParser(body); err != nil {
+		return fiber.NewError(400, "Error parsing request body: "+err.Error())
+	}
+
+	// Validate inputs
+	warnings := make([]string, 0, 2)
+	if !validation.IsEmailValid(body.Email) {
+		warnings = append(warnings, "Email is invalid.")
+	}
+	if !validation.IsOtpValid(body.Otp) {
+		warnings = append(warnings, "The one-time passcode is invalid.")
+	}
+	if len(warnings) > 0 {
+		return fiber.NewError(400, strings.Join(warnings, " "))
+	}
+
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
+	}
+
+	// Verify otp matches
+	if body.Otp != user.Otp {
+		return fiber.NewError(400, "Cannot update email address because the one-time passcode did not match")
+	}
+
+	// Save new email to db
+	updatedUser, err := db.UpdateEmail(user.Id, body.Email)
+	if err != nil {
+		return fiber.NewError(500, "Error updating email address in database: "+err.Error())
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send user
+	return utils.SendSuccessJSON(c, 200, userResponse, "Updated email address")
+
 }
 
 func UpdateUsername(c *fiber.Ctx) error {
@@ -461,15 +500,14 @@ func UpdateUsername(c *fiber.Ctx) error {
 		return fiber.NewError(400, err.Error())
 	}
 
-	// Parse userId from path
-	id, err := c.ParamsInt("userId")
-	if err != nil || id == 0 {
-		return fiber.NewError(400, "Error parsing path parameter: "+err.Error())
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
-	userId := uint(id)
 
 	// Save to db
-	updatedUser, err := db.UpdateUsername(userId, body.Username)
+	updatedUser, err := db.UpdateUsername(user.Id, body.Username)
 	if err != nil {
 		return fiber.NewError(400, "Error updating username in database: "+err.Error())
 	}

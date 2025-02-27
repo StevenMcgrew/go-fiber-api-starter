@@ -18,10 +18,9 @@ func SetupRoutes(app *fiber.App) {
 	// CORS
 	app.Use(cors.New(config.FiberCorsConfig))
 
-	// Cache (I'm only adding one header here)
-	// see middleware Cache for an alternative at https://docs.gofiber.io/api/middleware/cache
+	// Set some response headers
 	app.Use(func(c *fiber.Ctx) error {
-		c.Set("Cache-Control", "no-cache")
+		// c.Set("Access-Control-Max-Age", "7200")
 		return c.Next()
 	})
 
@@ -39,7 +38,7 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/auth/verify-email", hn.VerifyEmail)
 	v1.Post("/auth/resend-email-verification", hn.ResendEmailVerification)
 	v1.Post("/auth/reset-password/request", hn.ResetPasswordRequest)
-	v1.Post("/auth/reset-password/update", hn.ResetPasswordUpdate)
+	v1.Patch("/auth/reset-password/update", hn.ResetPasswordUpdate)
 
 	// USERS
 	v1.Post("/users", hn.CreateUser)
@@ -49,7 +48,8 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/users/username/availability", hn.IsUsernameAvailable)
 	v1.Patch("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdmin, hn.UpdateUser)
 	v1.Patch("/users/:userId/password", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdatePassword)
-	v1.Patch("/users/:userId/email", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateEmail)
+	v1.Post("/users/:userId/change-email/request", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.ChangeEmailRequest)
+	v1.Patch("/users/:userId/change-email/update", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.ChangeEmailUpdate)
 	v1.Patch("/users/:userId/username", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateUsername)
 	v1.Delete("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.SoftDeleteUser)
 

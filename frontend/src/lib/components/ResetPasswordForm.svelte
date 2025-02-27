@@ -29,9 +29,10 @@
         const form = e.currentTarget as HTMLFormElement;
         const formData = new FormData(form);
         const url = $store.baseFetchUrl + "/auth/reset-password/update";
+        const method = "PATCH"
 
         try {
-            response = await submitForm(formData, url);
+            response = await submitForm(formData, url, method);
         } catch (err) {
             error = err;
         } finally {

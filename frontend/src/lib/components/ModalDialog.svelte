@@ -3,9 +3,11 @@
     import { modalComp } from "../../types";
     import ForgotPasswordForm from "./ForgotPasswordForm.svelte";
     import LoginForm from "./LoginForm.svelte";
+    import LoggingOutMsg from "./LoggingOutMsg.svelte";
     import ResetPasswordForm from "./ResetPasswordForm.svelte";
     import SignUpForm from "./SignUpForm.svelte";
-    import VerificationForm from "./VerificationForm.svelte";
+    import SignupVerificationForm from "./SignupVerificationForm.svelte";
+    import UpdateEmailVerificationForm from "./UpdateEmailVerificationForm.svelte";
 
     let dialog: HTMLDialogElement;
 
@@ -22,10 +24,14 @@
     <button class="close-btn" onclick={() => ($store.showModal = "")}>×</button>
     {#if $store.showModal == modalComp.LoginForm}
         <LoginForm />
+    {:else if $store.showModal == modalComp.LoggingOutMsg}
+        <LoggingOutMsg />
     {:else if $store.showModal == modalComp.SignUpForm}
         <SignUpForm />
-    {:else if $store.showModal == modalComp.VerificationForm}
-        <VerificationForm />
+    {:else if $store.showModal == modalComp.SignupVerificationForm}
+        <SignupVerificationForm />
+    {:else if $store.showModal == modalComp.UpdateEmailVerificationForm}
+        <UpdateEmailVerificationForm />
     {:else if $store.showModal == modalComp.ForgotPasswordForm}
         <ForgotPasswordForm />
     {:else if $store.showModal == modalComp.ResetPasswordForm}

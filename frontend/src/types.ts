@@ -24,16 +24,20 @@ export const toastColor: ToastColor = {
 
 type ModalComponents = {
     readonly SignUpForm: string;
-    readonly VerificationForm: string;
+    readonly SignupVerificationForm: string;
+    readonly UpdateEmailVerificationForm: string;
     readonly LoginForm: string;
+    readonly LoggingOutMsg: string;
     readonly ForgotPasswordForm: string;
     readonly ResetPasswordForm: string;
 }
 
 export const modalComp: ModalComponents = {
     SignUpForm: "SignUpForm",
-    VerificationForm: "VerificationForm",
+    SignupVerificationForm: "SignupVerificationForm",
+    UpdateEmailVerificationForm: "UpdateEmailVerificationForm",
     LoginForm: "LoginForm",
+    LoggingOutMsg: "LoggingOutMsg",
     ForgotPasswordForm: "ForgotPasswordForm",
     ResetPasswordForm: "ResetPasswordForm",
 }

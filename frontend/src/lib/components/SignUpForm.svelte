@@ -107,8 +107,7 @@
             if (error === null) {
                 form.reset();
                 setUser(response);
-                $store.newEmailAddress = response.data.email;
-                $store.showModal = modalComp.VerificationForm;
+                $store.showModal = modalComp.SignupVerificationForm;
             }
         }
     }
@@ -178,7 +177,7 @@
         {/if}
         <button
             class="more-options-txt"
-            onclick={() => ($store.showModal = modalComp.VerificationForm)}
+            onclick={() => ($store.showModal = modalComp.SignupVerificationForm)}
             >Enter a verification code</button
         >
     </form>

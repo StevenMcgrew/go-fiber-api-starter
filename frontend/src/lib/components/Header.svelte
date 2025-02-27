@@ -1,6 +1,6 @@
 <script lang="ts">
     import NavBar from "./NavBar.svelte";
-    import Login from "./Login.svelte";
+    import Account from "./Account.svelte";
     import { store } from "../../store.svelte";
     import { orient } from "../../types";
 
@@ -18,7 +18,7 @@
     <div class="upper-box">
         <a class="h1-anchor" href="/"><h1>Svelte SPA Starter</h1></a>
         {#if $store.showLoginBtns}
-            <Login/>
+            <Account/>
         {/if}
     </div>
     <NavBar/>

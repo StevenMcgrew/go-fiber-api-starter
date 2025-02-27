@@ -27,6 +27,15 @@ func EmailThePasswordResetCode(to string, otp string) error {
 	return nil
 }
 
+func EmailTheOtp(to string, otp string) error {
+	err := SendMail(to, config.EMAIL_FROM, "One-Time Passcode",
+		fmt.Sprintf(OtpTemplate, otp))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // gomail docs:  https://pkg.go.dev/gopkg.in/gomail.v2#section-readme
 func SendMail(to string, from string, subject string, body string) error {
 	m := gomail.NewMessage()

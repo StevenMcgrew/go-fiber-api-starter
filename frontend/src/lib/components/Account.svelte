@@ -4,6 +4,7 @@
     import { modalComp, orient } from "../../types";
 
     function logOut() {
+        $store.showModal = modalComp.LoggingOutMsg;
         clearStorageAndReload();
     }
 

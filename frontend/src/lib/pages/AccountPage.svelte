@@ -1,12 +1,23 @@
 <script lang="ts">
     import { store } from "../../store.svelte";
-    import { getEmailValidationWarnings, getUsernameValidationWarnings } from "../../validation";
+    import {
+        getEmailValidationWarnings,
+        getPasswordValidationWarnings,
+        getUsernameValidationWarnings,
+    } from "../../validation";
     import { submitForm } from "../../fetch";
-    import { modalComp } from "../../types";
+    import { modalComp, toastColor } from "../../types";
 
     let usernameWarnings = "";
     let emailWarnings = "";
-    let passwordWarnings = "";
+    let currentPwWarnings = "";
+    let newPwWarnings = "";
+    let repeatPwWarnings = "";
+    let pwSubmissionWarnings = "";
+
+    let isUsernameSubmitting = false;
+    let isEmailSubmitting = false;
+    let isPasswordSubmitting = false;
 
     async function submit_username(e: SubmitEvent) {
         e.preventDefault();
@@ -26,15 +37,17 @@
         let response: any = null;
 
         try {
+            isUsernameSubmitting = true;
             response = await submitForm(formData, url, method, token);
         } catch (err: any) {
             usernameWarnings = err.message;
         } finally {
+            isUsernameSubmitting = false;
             if (usernameWarnings === "") {
                 form.reset();
                 $store.user.username = response.data.username;
                 $store.showToast = {
-                    color: "green",
+                    color: toastColor.green,
                     text: "Username updated!",
                 };
             }
@@ -53,112 +66,199 @@
         }
 
         const formData = new FormData(form);
-        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/email`;
+        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/change-email/request`;
+        const method = "POST";
+        const token = $store.user.token;
+        let response: any = null;
+
+        try {
+            isEmailSubmitting = true;
+            response = await submitForm(formData, url, method, token);
+        } catch (err: any) {
+            emailWarnings = err.message;
+        } finally {
+            isEmailSubmitting = false;
+            if (emailWarnings === "") {
+                $store.newEmailAddress = response.data;
+                $store.showModal = modalComp.UpdateEmailVerificationForm;
+            }
+        }
+    }
+
+    async function submit_password(e: SubmitEvent) {
+        e.preventDefault();
+        currentPwWarnings = "";
+        newPwWarnings = "";
+        repeatPwWarnings = "";
+
+        const form = e.currentTarget as HTMLFormElement;
+
+        currentPwWarnings = getPasswordValidationWarnings(
+            form.currentPassword.value,
+        );
+        newPwWarnings = getPasswordValidationWarnings(form.newPassword.value);
+        if (form.newPassword.value !== form.repeatNewPassword.value) {
+            repeatPwWarnings = "Must match New Password";
+        }
+        if (currentPwWarnings || newPwWarnings || repeatPwWarnings) {
+            return;
+        }
+
+        const formData = new FormData(form);
+        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/password`;
         const method = "PATCH";
         const token = $store.user.token;
         let response: any = null;
 
         try {
+            isPasswordSubmitting = true;
             response = await submitForm(formData, url, method, token);
         } catch (err: any) {
-            emailWarnings = err.message;
+            pwSubmissionWarnings = err.message;
         } finally {
-            if (emailWarnings === "") {
+            isPasswordSubmitting = false;
+            if (pwSubmissionWarnings === "") {
                 form.reset();
-                $store.newEmailAddress = response.data.email;
-                // TODO: implement separate verification form
-                $store.showModal = modalComp.VerificationForm;
+                $store.showToast = {
+                    color: toastColor.green,
+                    text: "Password updated!",
+                };
             }
         }
     }
 </script>
 
-<div class="user-account-page">
-    <!-- Profile Section -->
-    <div class="profile-section">
-        <div>
-            <img
-                class="user-img profile-picture"
-                src={$store.baseStorageUrl + $store.user.imageUrl}
-                alt="user"
-            />
-            <button class="edit-picture-btn">Change Picture</button>
+{#if $store.user.token}
+    <div class="user-account-page">
+        <!-- Profile Section -->
+        <div class="profile-section">
+            <div>
+                <img
+                    class="user-img profile-picture"
+                    src={$store.baseStorageUrl + $store.user.imageUrl}
+                    alt="user"
+                />
+                <button class="edit-picture-btn">Change Picture</button>
+            </div>
+            <h2>{$store.user.username}</h2>
         </div>
-        <h2>{$store.user.username}</h2>
+
+        <!-- Update Username Section -->
+        <div class="update-section">
+            <p>Username: {$store.user.username}</p>
+            <form onsubmit={submit_username} class="update-form">
+                <label for="username">New Username</label><br />
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    autocomplete="off"
+                    spellcheck="false"
+                /><br />
+                <p
+                    class="form-input-warning {usernameWarnings
+                        ? 'error-text'
+                        : ''}"
+                >
+                    {(() => {
+                        if (usernameWarnings) {
+                            return usernameWarnings;
+                        }
+                        if (isUsernameSubmitting) {
+                            return "Submitting...";
+                        }
+                    })()}
+                </p>
+                <button type="submit">Update</button>
+            </form>
+        </div>
+
+        <!-- Update Email Section -->
+        <div class="update-section">
+            <p>Email: {$store.user.email}</p>
+            <form onsubmit={submit_email} class="update-form">
+                <label for="email">New Email</label><br />
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    autocomplete="off"
+                    spellcheck="false"
+                    bind:value={$store.newEmailAddress}
+                /><br />
+                <p
+                    class="form-input-warning {emailWarnings
+                        ? 'error-text'
+                        : ''}"
+                >
+                    {(() => {
+                        if (emailWarnings) {
+                            return emailWarnings;
+                        }
+                        if (isEmailSubmitting) {
+                            return "Submitting...";
+                        }
+                    })()}
+                </p>
+                <button type="submit">Update</button>
+            </form>
+        </div>
+
+        <!-- Update Password Section -->
+        <div class="update-section">
+            <p>Password</p>
+            <form onsubmit={submit_password} class="update-form">
+                <label for="current-password">Current Password</label><br />
+                <input
+                    type="password"
+                    id="current-password"
+                    name="currentPassword"
+                    autocomplete="off"
+                    spellcheck="false"
+                /><br />
+                <p class="error-text form-input-warning">{currentPwWarnings}</p>
+
+                <label for="new-password">New Password</label><br />
+                <input
+                    type="password"
+                    id="new-password"
+                    name="newPassword"
+                    autocomplete="off"
+                    spellcheck="false"
+                /><br />
+                <p class="error-text form-input-warning">{newPwWarnings}</p>
+
+                <label for="confirm-password">Confirm New Password</label><br />
+                <input
+                    type="password"
+                    id="confirm-password"
+                    name="repeatNewPassword"
+                    autocomplete="off"
+                    spellcheck="false"
+                /><br />
+                <p class="error-text form-input-warning">{repeatPwWarnings}</p>
+
+                <button type="submit">Update</button>
+                <p
+                    class="form-input-warning {pwSubmissionWarnings
+                        ? 'error-text'
+                        : ''}"
+                >
+                    {(() => {
+                        if (pwSubmissionWarnings) {
+                            return pwSubmissionWarnings;
+                        }
+                        if (isPasswordSubmitting) {
+                            return "Submitting...";
+                        }
+                    })()}
+                </p>
+            </form>
+        </div>
     </div>
-
-    <!-- Update Username Section -->
-    <div class="update-section">
-        <p>Username: {$store.user.username}</p>
-        <form onsubmit={submit_username} class="update-form">
-            <label for="username">New Username</label><br />
-            <input
-                type="text"
-                id="username"
-                name="username"
-                autocomplete="off"
-                spellcheck="false"
-            /><br />
-            <p class="error-text form-input-warning">{usernameWarnings}</p>
-            <button type="submit">Update</button>
-        </form>
-    </div>
-
-    <!-- Update Email Section -->
-    <div class="update-section">
-        <p>Email: {$store.user.email}</p>
-        <form onsubmit={submit_email} class="update-form">
-            <label for="email">New Email</label><br />
-            <input
-                type="email"
-                id="email"
-                name="email"
-                autocomplete="off"
-                spellcheck="false"
-            /><br />
-            <p class="error-text form-input-warning">{emailWarnings}</p>
-            <button type="submit">Update</button>
-        </form>
-    </div>
-
-    <!-- Update Password Section -->
-    <div class="update-section">
-        <p>Password</p>
-        <form class="update-form">
-            <label for="current-password">Current Password</label><br />
-            <input
-                type="password"
-                id="current-password"
-                name="current-password"
-                autocomplete="off"
-                spellcheck="false"
-            /><br />
-            <p class="error-text form-input-warning"></p>
-
-            <label for="new-password">New Password</label><br />
-            <input
-                type="password"
-                id="new-password"
-                name="new-password"
-                autocomplete="off"
-                spellcheck="false"
-            /><br />
-            <p class="error-text form-input-warning">{passwordWarnings}</p>
-
-            <label for="confirm-password">Confirm New Password</label><br />
-            <input
-                type="password"
-                id="confirm-password"
-                name="confirm-password"
-                autocomplete="off"
-                spellcheck="false"
-            /><br />
-            <p class="error-text form-input-warning"></p>
-
-            <button type="submit">Update</button>
-        </form>
-    </div>
-</div>
+{:else}
+    <p class="error-text">You must be logged in to view this page.</p>
+{/if}
 
 <style>
     .user-account-page {
