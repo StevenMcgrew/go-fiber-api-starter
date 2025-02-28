@@ -11,6 +11,7 @@ import (
 	"go-fiber-api-starter/internal/utils"
 	"go-fiber-api-starter/internal/validation"
 	"math"
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -475,6 +476,57 @@ func ChangeEmailUpdate(c *fiber.Ctx) error {
 	// Send user
 	return utils.SendSuccessJSON(c, 200, userResponse, "Updated email address")
 
+}
+
+func UpdateProfilePic(c *fiber.Ctx) error {
+	// Retrieve the fileHeader from the form
+	fileHeader, err := c.FormFile("profilePic")
+	if err != nil {
+		return fiber.NewError(400, "No file uploaded")
+	}
+
+	// Validate file type
+	isValid, err := validation.IsProfilePicMimeTypeValid(fileHeader)
+	if err != nil {
+		return fiber.NewError(500, err.Error())
+	}
+	if !isValid {
+		return fiber.NewError(400, "Profile picture must be of type .jpg .jpeg .png .bmp")
+	}
+
+	// Type assert user (the user should be in c.Locals() from AttachUser() middleware)
+	user, ok := c.Locals("user").(*models.User)
+	if !ok {
+		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
+	}
+
+	// TODO: delete the old image
+
+	// Save the file
+	wd, err := os.Getwd()
+	if err != nil {
+		return fiber.NewError(500, "Error getting working directory")
+	}
+	trimmedName := utils.TrimStringLength(fileHeader.Filename, 30)
+	fileName := fmt.Sprintf("%d_profile-pic_%s_%s", user.Id, utils.RandomSixDigitStr(), trimmedName)
+	filePath := fmt.Sprintf("%s/public/temp-storage/%s", wd, fileName)
+	fmt.Println("filePath:", filePath)
+	if err := c.SaveFile(fileHeader, filePath); err != nil {
+		fmt.Println("Error:", err)
+		return fiber.NewError(500, "Error saving file")
+	}
+
+	// Update user's ImageUrl
+	updatedUser, err := db.UpdateImageUrl(user.Id, "/"+fileName)
+	if err != nil {
+		return fiber.NewError(400, "Error updating image path in database: "+err.Error())
+	}
+
+	// Serialize user
+	userResponse := serialization.UserResponse(&updatedUser)
+
+	// Send response
+	return utils.SendSuccessJSON(c, 200, userResponse, "Successfully uploaded image")
 }
 
 func UpdateUsername(c *fiber.Ctx) error {

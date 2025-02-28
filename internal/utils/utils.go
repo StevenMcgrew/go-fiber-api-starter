@@ -102,3 +102,10 @@ func HasAllowedUsernameChars(str string) bool {
 			r != '_'
 	})
 }
+
+func TrimStringLength(str string, maxLength int) string {
+	if len(str) <= maxLength {
+		return str
+	}
+	return str[:maxLength]
+}

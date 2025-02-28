@@ -90,3 +90,10 @@ dialog,
     border-radius: 50%;
     object-fit: cover;
 }
+
+input[type="file"]::file-selector-button{
+    background: transparent;
+    color: var(--nc-lk-1);
+    border: none;
+    cursor: pointer;
+}

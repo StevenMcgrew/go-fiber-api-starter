@@ -31,8 +31,16 @@ export const getPasswordValidationWarnings = (password: string) => {
     return warnings
 }
 
+export const getImageMimeTypeWarnings = (file: File) => {
+    let allowedMIMEtypes = ['image/bmp', 'image/jpeg', 'image/png'];
+    if (allowedMIMEtypes.includes(file.type)) {
+        return ""
+    }
+    return "Must be .jpg  .jpeg  .png  .bmp"
+}
+
 function hasAllowedUsernameChars(username: string): boolean {
     // Regular expression to match only alphanumeric characters and underscores
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
     return usernameRegex.test(username);
-  }
+}

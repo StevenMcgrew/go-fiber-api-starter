@@ -2,12 +2,14 @@
     import { store } from "../../store.svelte";
     import {
         getEmailValidationWarnings,
+        getImageMimeTypeWarnings,
         getPasswordValidationWarnings,
         getUsernameValidationWarnings,
     } from "../../validation";
     import { submitForm } from "../../fetch";
     import { modalComp, toastColor } from "../../types";
 
+    let imageWarnings = "";
     let usernameWarnings = "";
     let emailWarnings = "";
     let currentPwWarnings = "";
@@ -15,9 +17,48 @@
     let repeatPwWarnings = "";
     let pwSubmissionWarnings = "";
 
+    let isImageSubmitting = false;
     let isUsernameSubmitting = false;
     let isEmailSubmitting = false;
     let isPasswordSubmitting = false;
+
+    async function submit_image(e: Event) {
+        imageWarnings = ""
+
+        const fileInput = e.currentTarget as HTMLFormElement;
+        if (!fileInput.files.length) {
+            return;
+        }
+        const file: File = fileInput.files[0];
+        
+        imageWarnings = getImageMimeTypeWarnings(file)
+        if (imageWarnings) {
+            return
+        }
+
+        const formData = new FormData(fileInput.form)
+        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/profile-pic`
+        const method = "PATCH";
+        const token = $store.user.token;
+        let response: any = null;
+
+        try {
+            isImageSubmitting = true;
+            response = await submitForm(formData, url, method, token)
+        } catch (err: any) {
+            imageWarnings = err.message;
+        } finally {
+            isImageSubmitting = false
+            if (imageWarnings === "") {
+                fileInput.form.reset()
+                $store.user.imageUrl = response.data.imageUrl;
+                $store.showToast = {
+                    color: toastColor.green,
+                    text: "Profile picture updated!"
+                }
+            }
+        }
+    }
 
     async function submit_username(e: SubmitEvent) {
         e.preventDefault();
@@ -138,7 +179,31 @@
                     src={$store.baseStorageUrl + $store.user.imageUrl}
                     alt="user"
                 />
-                <button class="edit-picture-btn">Change Picture</button>
+                <form onsubmit={(e) => e.preventDefault()} class="img-form">
+                    <label for="fileInput">Profile Picture</label><br />
+                    <input
+                        onchange={submit_image}
+                        class="profile-pic-input"
+                        type="file"
+                        name="profilePic"
+                        id="fileInput"
+                        accept=".jpg, .jpeg, .png, .bmp"
+                    />
+                    <p
+                        class="form-input-warning {imageWarnings
+                            ? 'error-text'
+                            : ''}"
+                    >
+                        {(() => {
+                            if (imageWarnings) {
+                                return imageWarnings;
+                            }
+                            if (isImageSubmitting) {
+                                return "Submitting...";
+                            }
+                        })()}
+                    </p>
+                </form>
             </div>
             <h2>{$store.user.username}</h2>
         </div>
@@ -276,9 +341,8 @@
         height: 150px;
     }
 
-    .edit-picture-btn {
-        display: block;
-        margin: 10px auto;
+    .profile-section h2 {
+        padding: 0;
     }
 
     .update-section {
@@ -301,5 +365,17 @@
 
     .update-form label {
         font-size: 14px;
+    }
+
+    .profile-pic-input,
+    .profile-pic-input::file-selector-button {
+        padding: 0;
+        width: 5rem;
+        margin: 0;
+    }
+
+    .img-form,
+    .img-form p {
+        margin-bottom: 0;
     }
 </style>

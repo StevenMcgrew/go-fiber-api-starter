@@ -51,6 +51,7 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/users/:userId/change-email/request", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.ChangeEmailRequest)
 	v1.Patch("/users/:userId/change-email/update", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.ChangeEmailUpdate)
 	v1.Patch("/users/:userId/username", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateUsername)
+	v1.Patch("/users/:userId/profile-pic", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.UpdateProfilePic)
 	v1.Delete("/users/:userId", mw.Authn, mw.AttachUser, mw.OnlyAdminOrOwner, hn.SoftDeleteUser)
 
 	// NOTIFICATIONS

@@ -104,6 +104,13 @@ func UpdateUser(id uint, userUpdate *models.UserUpdate) (models.User, error) {
 	return row, err
 }
 
+func UpdateImageUrl(id uint, imageUrl string) (models.User, error) {
+	row, err := One(`UPDATE users SET image_url = @imageUrl WHERE id = @id RETURNING *;`,
+		pgx.NamedArgs{"imageUrl": imageUrl, "id": id},
+		&models.User{})
+	return row, err
+}
+
 func UpdateUsername(id uint, username string) (models.User, error) {
 	row, err := One(`UPDATE users SET username = @username WHERE id = @id RETURNING *;`,
 		pgx.NamedArgs{"username": username, "id": id},
