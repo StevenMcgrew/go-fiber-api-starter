@@ -24,3 +24,10 @@ export const debounce = <F extends (...args: any[]) => any>(
         if (callNow) func.apply(context, args);
     };
 };
+
+export const getImgSrc = (baseImgUrl: string, userImageUrl: string): string => {
+    if (userImageUrl) {
+        return baseImgUrl + userImageUrl;
+    }
+    return baseImgUrl + "/default-profile-pic.png"
+}

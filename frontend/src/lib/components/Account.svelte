@@ -2,6 +2,7 @@
     import { link } from "svelte-spa-router";
     import { store, clearStorageAndReload } from "../../store.svelte";
     import { modalComp, orient } from "../../types";
+    import { getImgSrc } from "../../utils";
 
     function logOut() {
         $store.showModal = modalComp.LoggingOutMsg;
@@ -18,7 +19,7 @@
         <a use:link href="/account">
             <img
                 class="user-img"
-                src={$store.baseStorageUrl + $store.user.imageUrl}
+                src={getImgSrc($store.baseStorageUrl, $store.user.imageUrl)}
                 alt="user"
             />
         </a>

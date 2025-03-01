@@ -8,6 +8,7 @@
     } from "../../validation";
     import { submitForm } from "../../fetch";
     import { modalComp, toastColor } from "../../types";
+    import { getImgSrc } from "../../utils";
 
     let imageWarnings = "";
     let usernameWarnings = "";
@@ -176,7 +177,7 @@
             <div>
                 <img
                     class="user-img profile-picture"
-                    src={$store.baseStorageUrl + $store.user.imageUrl}
+                    src={getImgSrc($store.baseStorageUrl, $store.user.imageUrl)}
                     alt="user"
                 />
                 <form onsubmit={(e) => e.preventDefault()} class="img-form">

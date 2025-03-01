@@ -57,7 +57,7 @@ func CreateUser(c *fiber.Ctx) error {
 		Otp:      utils.RandomSixDigitStr(),
 		Role:     userrole.REGULAR,
 		Status:   userstatus.UNVERIFIED,
-		ImageUrl: "/default-profile-pic.png",
+		ImageUrl: "",
 	}
 
 	// Save user
@@ -514,6 +514,15 @@ func UpdateProfilePic(c *fiber.Ctx) error {
 	if err := c.SaveFile(fileHeader, filePath); err != nil {
 		fmt.Println("Error:", err)
 		return fiber.NewError(500, "Error saving file")
+	}
+
+	// Delete previous file
+	if len(user.ImageUrl) > 0 {
+		filePath = fmt.Sprintf("%s/public/temp-storage%s", wd, user.ImageUrl)
+		errOnDelete := os.Remove(filePath)
+		if errOnDelete != nil {
+			return fiber.NewError(500, "Error deleting previous image file")
+		}
 	}
 
 	// Update user's ImageUrl
