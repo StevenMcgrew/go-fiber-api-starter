@@ -500,8 +500,6 @@ func UpdateProfilePic(c *fiber.Ctx) error {
 		return fiber.NewError(500, `Type assertion failed for c.Locals("user")`)
 	}
 
-	// TODO: delete the old image
-
 	// Save the file
 	wd, err := os.Getwd()
 	if err != nil {
