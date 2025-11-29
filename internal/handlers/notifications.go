@@ -79,9 +79,8 @@ func GetAllNotificationsForUser(c *fiber.Ctx) error {
 func GetAllNotifications(c *fiber.Ctx) error {
 	// Expected query parameters
 	type queryParams struct {
-		Page    uint   `query:"page"`
-		PerPage uint   `query:"per_page"`
-		Query   string `query:"query"`
+		Page    uint `query:"page"`
+		PerPage uint `query:"per_page"`
 	}
 	qParams := &queryParams{}
 
@@ -93,10 +92,9 @@ func GetAllNotifications(c *fiber.Ctx) error {
 	// Set simpler var names
 	page := qParams.Page
 	perPage := qParams.PerPage
-	query := qParams.Query
 
 	// Get row rowCount
-	rowCount, err := db.GetRowCount("notificaTions")
+	rowCount, err := db.GetRowCount("notifications")
 	if err != nil {
 		return fiber.NewError(500, "Error getting row count: "+err.Error())
 	}
@@ -115,24 +113,24 @@ func GetAllNotifications(c *fiber.Ctx) error {
 	}
 
 	// Get notifications
-	notifications, sql, err := db.GetNotifications(page, perPage, query)
+	notifications, sql, err := db.GetNotifications(page, perPage)
 	if err != nil {
 		return fiber.NewError(500, "Error getting notifications from database: "+err.Error())
 	}
 
 	// Create pagination data for response
 	pre := "/api/v1/notifications"
-	selfLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page, perPage, query)
-	firstLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, 1, perPage, query)
-	previousLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page-1, perPage, query)
+	selfLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page, perPage)
+	firstLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, 1, perPage)
+	previousLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page-1, perPage)
 	if page == 1 {
 		previousLink = ""
 	}
-	nextLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page+1, perPage, query)
+	nextLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, page+1, perPage)
 	if page == pageCount {
 		nextLink = ""
 	}
-	lastLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, pageCount, perPage, query)
+	lastLink := fmt.Sprintf("%s?page=%d&per_page=%d&query=%s", pre, pageCount, perPage)
 	pageData := &models.Pagination{
 		Page:         page,
 		PerPage:      perPage,

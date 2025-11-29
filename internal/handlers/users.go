@@ -119,7 +119,7 @@ func GetAllUsers(c *fiber.Ctx) error {
 	}
 
 	// Get users
-	users, sql, err := db.GetUsers(page, perPage, query)
+	users, sql, err := db.GetUsers(page, perPage)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return fiber.NewError(400, "No user records found in database")

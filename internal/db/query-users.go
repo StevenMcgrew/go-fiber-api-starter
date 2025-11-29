@@ -51,12 +51,11 @@ func GetUserByUsername(username string) (models.User, error) {
 	return row, err
 }
 
-func GetUsers(page uint, perPage uint, query string) ([]models.User, string, error) {
+func GetUsers(page uint, perPage uint) ([]models.User, string, error) {
 	// Query builder
 	qb := NewQueryBuilder(
 		page,
 		perPage,
-		query,
 		"users",
 		[]string{
 			"id",
@@ -73,7 +72,7 @@ func GetUsers(page uint, perPage uint, query string) ([]models.User, string, err
 	)
 
 	// Build the query string
-	queryString, err := qb.Build()
+	queryString, err := qb.BuildQuery()
 	if err != nil {
 		return nil, "", err
 	}

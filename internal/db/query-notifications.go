@@ -32,12 +32,11 @@ func GetAllNotificationsForUserId(userId uint) ([]models.Notification, error) {
 	return rows, err
 }
 
-func GetNotifications(page uint, perPage uint, query string) ([]models.Notification, string, error) {
+func GetNotifications(page uint, perPage uint) ([]models.Notification, string, error) {
 	// Query builder
 	qb := NewQueryBuilder(
 		page,
 		perPage,
-		query,
 		"notifications",
 		[]string{
 			"id",
@@ -49,7 +48,7 @@ func GetNotifications(page uint, perPage uint, query string) ([]models.Notificat
 	)
 
 	// Build the query string
-	queryString, err := qb.Build()
+	queryString, err := qb.BuildQuery()
 	if err != nil {
 		return nil, queryString, err
 	}
