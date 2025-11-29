@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { store } from "../../store.svelte";
+    import { store, clearModal } from "../../store.svelte";
     import { submitForm } from "../../fetch";
     import { type User, toastColor } from "../../types";
 
@@ -44,7 +44,7 @@
                     color: toastColor.green,
                     text: "Password Reset! You are now logged in.",
                 };
-                $store.showModal = "";
+                clearModal();
             }
         }
     }
@@ -88,7 +88,7 @@
         />
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => ($store.showModal = "")}
+            <button type="button" onclick={clearModal}
                 >Cancel</button
             >
             <button type="submit">Reset Password</button>

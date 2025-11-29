@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	LoginDuration       = 7 * 24 * time.Hour // one week
-	VerifyEmailDuration = 15 * time.Minute   // fifteen minutes
+	LoginDuration       = time.Minute      // 7 * 24 * time.Hour // one week
+	VerifyEmailDuration = 15 * time.Minute // fifteen minutes
 	API_BASE_URL        = os.Getenv("API_BASE_URL")
 	API_SECRET          = os.Getenv("API_SECRET")
 	API_PORT            = os.Getenv("API_PORT")

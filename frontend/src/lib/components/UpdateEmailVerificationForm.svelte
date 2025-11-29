@@ -1,6 +1,6 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { store } from "../../store.svelte";
+    import { store, clearModal } from "../../store.svelte";
     import { toastColor } from "../../types";
 
     let isLoading = false;
@@ -33,7 +33,7 @@
                     color: toastColor.green,
                     text: "Email address updated!",
                 };
-                $store.showModal = "";
+                clearModal();
             }
         }
     }

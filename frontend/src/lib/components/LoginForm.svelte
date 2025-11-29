@@ -1,6 +1,6 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { store, switchToLocalStorage } from "../../store.svelte";
+    import { store, switchToLocalStorage, clearModal } from "../../store.svelte";
     import { type User, modalComp, toastColor } from "../../types";
 
     let isLoading = false;
@@ -31,6 +31,11 @@
         passwordInputValue = "";
     }
 
+    function cancel() {
+        customFormReset();
+        clearModal();
+    }
+
     async function onsubmit(e: SubmitEvent) {
         e.preventDefault();
 
@@ -54,7 +59,7 @@
                     color: toastColor.green,
                     text: "Logged In!",
                 };
-                $store.showModal = "";
+                clearModal();
             }
         }
     }
@@ -93,7 +98,7 @@
         </label>
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => ($store.showModal = "")}
+            <button type="button" onclick={cancel}
                 >Cancel</button
             >
             <button type="submit">Log In</button>
@@ -115,7 +120,7 @@
 
 <style>
     .ckbox-label {
-        padding: 10px 0px 0px 5px;
+        padding: 10px 0px 20px 5px;
         font-size: 14px;
     }
 </style>

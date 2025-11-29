@@ -23,6 +23,7 @@ export const toastColor: ToastColor = {
 }
 
 type ModalComponents = {
+    readonly OnlyModalText: string;
     readonly SignUpForm: string;
     readonly SignupVerificationForm: string;
     readonly UpdateEmailVerificationForm: string;
@@ -33,6 +34,7 @@ type ModalComponents = {
 }
 
 export const modalComp: ModalComponents = {
+    OnlyModalText: "OnlyModalText",
     SignUpForm: "SignUpForm",
     SignupVerificationForm: "SignupVerificationForm",
     UpdateEmailVerificationForm: "UpdateEmailVerificationForm",
@@ -63,6 +65,7 @@ export type Store = {
     orientLoginBtns: string;
     showLoginBtns: boolean;
     showModal: string;
+    modalText: string;
     showToast: ToastData;
     newEmailAddress: string;
     user: User;

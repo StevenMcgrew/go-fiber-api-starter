@@ -24,39 +24,39 @@
     let isPasswordSubmitting = false;
 
     async function submit_image(e: Event) {
-        imageWarnings = ""
+        imageWarnings = "";
 
         const fileInput = e.currentTarget as HTMLFormElement;
         if (!fileInput.files.length) {
             return;
         }
         const file: File = fileInput.files[0];
-        
-        imageWarnings = getImageMimeTypeWarnings(file)
+
+        imageWarnings = getImageMimeTypeWarnings(file);
         if (imageWarnings) {
-            return
+            return;
         }
 
-        const formData = new FormData(fileInput.form)
-        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/profile-pic`
+        const formData = new FormData(fileInput.form);
+        const url = `${$store.baseFetchUrl}/users/${$store.user.id}/profile-pic`;
         const method = "PATCH";
         const token = $store.user.token;
         let response: any = null;
 
         try {
             isImageSubmitting = true;
-            response = await submitForm(formData, url, method, token)
+            response = await submitForm(formData, url, method, token);
         } catch (err: any) {
             imageWarnings = err.message;
         } finally {
-            isImageSubmitting = false
+            isImageSubmitting = false;
             if (imageWarnings === "") {
-                fileInput.form.reset()
+                fileInput.form.reset();
                 $store.user.imageUrl = response.data.imageUrl;
                 $store.showToast = {
                     color: toastColor.green,
-                    text: "Profile picture updated!"
-                }
+                    text: "Profile picture updated!",
+                };
             }
         }
     }
@@ -272,7 +272,7 @@
 
         <!-- Update Password Section -->
         <div class="update-section">
-            <p>Password</p>
+            <p>Password:</p>
             <form onsubmit={submit_password} class="update-form">
                 <label for="current-password">Current Password</label><br />
                 <input
@@ -358,10 +358,12 @@
 
     .update-form input {
         width: 300px;
+        margin: 0;
     }
 
     .update-form p {
-        margin-bottom: 0;
+        margin: 0;
+        padding: 2px 4px;
     }
 
     .update-form label {

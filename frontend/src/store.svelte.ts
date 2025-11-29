@@ -26,6 +26,7 @@ function createDefaultStore(): Store {
         orientLoginBtns: orient.horiz,
         showLoginBtns: true,
         showModal: "",
+        modalText: "",
         showToast: emptyToast,
         newEmailAddress: "",
         user: emptyUser,
@@ -86,4 +87,12 @@ export function clearStorageAndReload() {
     localStorage.clear();
     sessionStorage.clear();
     location.reload();
+}
+
+export function clearModal() {
+    store.update(currentStore => {
+        currentStore.modalText = "";
+        currentStore.showModal = "";
+        return currentStore;
+    })
 }

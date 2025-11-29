@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { store } from "../../store.svelte";
+    import { store, clearModal } from "../../store.svelte";
     import { modalComp } from "../../types";
     import ForgotPasswordForm from "./ForgotPasswordForm.svelte";
     import LoginForm from "./LoginForm.svelte";
@@ -21,7 +21,12 @@
 </script>
 
 <dialog bind:this={dialog}>
-    <button class="close-btn" onclick={() => ($store.showModal = "")}>×</button>
+    <button class="close-btn" onclick={clearModal}>×</button>
+
+    {#if $store.modalText}
+        <p class="modal-text">{$store.modalText}</p>
+    {/if}
+
     {#if $store.showModal == modalComp.LoginForm}
         <LoginForm />
     {:else if $store.showModal == modalComp.LoggingOutMsg}
@@ -36,8 +41,6 @@
         <ForgotPasswordForm />
     {:else if $store.showModal == modalComp.ResetPasswordForm}
         <ResetPasswordForm />
-    {:else}
-        <p>Missing content</p>
     {/if}
 </dialog>
 
@@ -49,5 +52,11 @@
         padding: 0px 5px 3px 5px;
         font-size: 2rem;
         line-height: 26px;
+    }
+
+    .modal-text {
+        padding: 40px 20px;
+        margin: 0;
+        max-width: 292px;
     }
 </style>

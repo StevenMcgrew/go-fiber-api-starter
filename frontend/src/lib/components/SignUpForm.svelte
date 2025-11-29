@@ -1,6 +1,6 @@
 <script lang="ts">
     import { submitForm } from "../../fetch";
-    import { store } from "../../store.svelte";
+    import { store, clearModal } from "../../store.svelte";
     import { modalComp, type User } from "../../types";
     import { debounce } from "../../utils.js";
     import { getEmailValidationWarnings, getPasswordValidationWarnings, getUsernameValidationWarnings } from "../../validation";
@@ -163,7 +163,7 @@
         <p class="error-text form-input-warning">{passwordRepeatWarnings}</p>
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => ($store.showModal = "")}
+            <button type="button" onclick={clearModal}
                 >Cancel</button
             >
             <button type="submit">Sign Up</button>

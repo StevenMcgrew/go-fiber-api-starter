@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { store } from "../../store.svelte";
+    import { store, clearModal } from "../../store.svelte";
     import { submitForm } from "../../fetch";
     import { modalComp } from "../../types";
 
@@ -46,7 +46,7 @@
         />
 
         <div class="form-btn-box">
-            <button type="button" onclick={() => ($store.showModal = "")}
+            <button type="button" onclick={clearModal}
                 >Cancel</button
             >
             <button type="submit">Request Reset</button>
