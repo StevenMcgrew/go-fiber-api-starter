@@ -31,3 +31,22 @@ export const getImgSrc = (baseImgUrl: string, userImageUrl: string): string => {
     }
     return baseImgUrl + "/default-profile-pic.png"
 }
+
+export function clickOutside(node: Node, callback: (node: Event) => void) {
+    const handleClick = (event: Event) => {
+        if (node &&
+            !node.contains(event.target as Node) &&
+            !event.defaultPrevented)
+        {
+            callback(event);
+        }
+    };
+
+    document.addEventListener("click", handleClick);
+
+    return {
+        destroy() {
+            document.removeEventListener("click", handleClick);
+        },
+    };
+}

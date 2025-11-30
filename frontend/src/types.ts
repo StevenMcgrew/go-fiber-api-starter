@@ -68,5 +68,6 @@ export type Store = {
     modalText: string;
     showToast: ToastData;
     newEmailAddress: string;
+    hasUnreadNotifications: boolean;
     user: User;
 }

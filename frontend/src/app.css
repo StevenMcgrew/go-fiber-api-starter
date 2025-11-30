@@ -16,6 +16,16 @@ dialog,
     color: inherit;
 }
 
+.panel {
+    width: fit-content;
+    height: fit-content;
+    border: 1px solid var(--nc-bg-3);
+    padding: 0.25em;
+    overflow: auto;
+    background-color: var(--nc-bg-2);
+    color: inherit;
+}
+
 :is(dialog, [popover]) input {
     background-color: var(--nc-bg-1);
 }

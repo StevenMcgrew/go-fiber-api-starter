@@ -29,6 +29,7 @@ function createDefaultStore(): Store {
         modalText: "",
         showToast: emptyToast,
         newEmailAddress: "",
+        hasUnreadNotifications: false,
         user: emptyUser,
     }
     return s
