@@ -2,6 +2,11 @@ button {
     text-transform: uppercase;
 }
 
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 dialog,
 [popover] {
     position: fixed;
@@ -101,9 +106,14 @@ dialog,
     object-fit: cover;
 }
 
-input[type="file"]::file-selector-button{
+input[type="file"]::file-selector-button {
     background: transparent;
     color: var(--nc-lk-1);
     border: none;
     cursor: pointer;
+}
+
+th,
+td {
+    padding: 12px;
 }
