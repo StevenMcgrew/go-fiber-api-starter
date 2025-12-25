@@ -32,3 +32,33 @@ export const submitForm = async (
         throw err
     }
 }
+
+export const customFetch = async (
+    url: string,
+    token: string = "none",
+    _method: string = "GET",
+) => {
+    try {
+        const response = await fetch(url, {
+            method: _method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        if (data.status !== "success") {
+            if (data.error.includes("expired")) { // JWT expired
+                data.error = "Try again after logging in";
+                store.update(currentStore => {
+                    currentStore.modalText = "⚠️ Your session has expired. Please log in before continuing.";
+                    currentStore.showModal = modalComp.LoginForm;
+                    return currentStore;
+                })
+            }
+            throw new Error(data.error)
+        }
+        return data
+    } catch (err: any) {
+        throw err
+    }
+}

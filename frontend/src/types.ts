@@ -71,3 +71,9 @@ export type Store = {
     hasUnreadNotifications: boolean;
     user: User;
 }
+
+export type Notification = {
+    textContent: string;
+    hasViewed: boolean;
+    createdAt: string;
+}
