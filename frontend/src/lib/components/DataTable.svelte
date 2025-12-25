@@ -1,9 +1,18 @@
 <script lang="ts">
+    import { tblComp } from "../../types";
+    import DeleteButton from "./tableComponents/DeleteButton.svelte";
+    import NotificationStatus from "./tableComponents/NotificationStatus.svelte";
+
     type TableData = Record<string, any>;
 
     interface Props {
         data: TableData[];
-        columns: { key: string; label: string; sortable?: boolean }[];
+        columns: {
+            header: string;
+            sortable: boolean;
+            key: string;
+            component?: string;
+        }[];
     }
 
     let { data = [], columns }: Props = $props();
@@ -81,6 +90,10 @@
             sortOrder = "asc";
         }
     }
+
+    function handleEdit(id: number) {
+        data = data.filter((r) => r.id !== id);
+    }
 </script>
 
 <div class="table-container">
@@ -89,9 +102,9 @@
         <label>
             Rows per page:
             <select bind:value={rowsPerPage} onchange={() => (currentPage = 1)}>
-                <option value={5}>5</option>
                 <option value={10}>10</option>
-                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
             </select>
         </label>
     </div>
@@ -104,7 +117,7 @@
                         onclick={() => col.sortable && toggleSort(col.key)}
                         class:sortable={col.sortable}
                     >
-                        {col.label}
+                        {col.header}
                         {#if sortKey === col.key}
                             {sortOrder === "asc" ? "↑" : "↓"}
                         {/if}
@@ -116,7 +129,29 @@
             {#each paginatedData as row}
                 <tr>
                     {#each columns as col}
-                        <td>{row[col.key]}</td>
+                        <td>
+                            {#if col.component}
+                                {#if col.component == tblComp.NotificationStatus}
+                                    <NotificationStatus
+                                        hasViewed={row[col.key]}
+                                    />
+                                {:else if col.component == tblComp.DeleteButton}
+                                    <DeleteButton recordId={row[col.key]} onEdit={handleEdit}/>
+                                    <!-- {:else if $store.showModal == modalComp.SignUpForm}
+                                    <SignUpForm />
+                                {:else if $store.showModal == modalComp.SignupVerificationForm}
+                                    <SignupVerificationForm />
+                                {:else if $store.showModal == modalComp.UpdateEmailVerificationForm}
+                                    <UpdateEmailVerificationForm />
+                                {:else if $store.showModal == modalComp.ForgotPasswordForm}
+                                    <ForgotPasswordForm />
+                                {:else if $store.showModal == modalComp.ResetPasswordForm}
+                                    <ResetPasswordForm /> -->
+                                {/if}
+                            {:else}
+                                {row[col.key]}
+                            {/if}
+                        </td>
                     {/each}
                 </tr>
             {/each}

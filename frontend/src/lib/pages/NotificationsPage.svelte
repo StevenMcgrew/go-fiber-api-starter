@@ -2,19 +2,21 @@
     import { store } from "../../store.svelte";
     import { onMount } from "svelte";
     import DataTable from "../components/DataTable.svelte";
-    import type { Notification } from "../../types";
+    import { tblComp, type Notification } from "../../types";
     import { customFetch } from "../../fetch";
+    import Header from "../components/Header.svelte";
 
     // Reactive state for the API lifecycle
     let notifications = $state<Notification[]>([]);
     let isLoading = $state(true);
     let error = $state<string | null>(null);
 
-    // Column definitions mapping API keys to labels
+    // Column definitions
     const columns = [
-        { key: "hasViewed", label: "Viewed", sortable: true },
-        { key: "textContent", label: "Text", sortable: true },
-        { key: "createdAt", label: "Timestamp", sortable: true },
+        { header: "Status", sortable: true, key: "hasViewed", component: tblComp.NotificationStatus },
+        { header: "Timestamp", sortable: true, key: "createdAt" },
+        { header: "Text", sortable: false, key: "textContent" },
+        { header: "", sortable: false, key: "id", component: tblComp.DeleteButton }
     ];
 
     onMount(async () => {

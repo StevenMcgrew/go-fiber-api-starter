@@ -7,6 +7,18 @@ button:disabled {
     cursor: not-allowed;
 }
 
+input[type="file"]::file-selector-button {
+    background: transparent;
+    color: var(--nc-lk-1);
+    border: none;
+    cursor: pointer;
+}
+
+th,
+td {
+    padding: 12px;
+}
+
 dialog,
 [popover] {
     position: fixed;
@@ -106,14 +118,13 @@ dialog,
     object-fit: cover;
 }
 
-input[type="file"]::file-selector-button {
-    background: transparent;
-    color: var(--nc-lk-1);
-    border: none;
-    cursor: pointer;
-}
-
-th,
-td {
-    padding: 12px;
+/* Notification Badge (Red Dot) Styling */
+.notification-badge {
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+    background-color: #ff4136;
+    /* Bright Red */
+    border-radius: 50%;
+    border: 1.6px solid white;
 }

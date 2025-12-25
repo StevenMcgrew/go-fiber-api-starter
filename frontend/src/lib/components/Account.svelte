@@ -161,16 +161,6 @@
         margin: 0;
     }
 
-    /* Notification Badge (Red Dot) Styling */
-    .notification-badge {
-        display: inline-block;
-        height: 10px;
-        width: 10px;
-        background-color: #ff4136; /* Bright Red */
-        border-radius: 50%;
-        border: 1.6px solid white;
-    }
-
     /* Specific positioning for the badge on the main profile icon */
     .profile-icon .notification-badge-icon {
         position: absolute;

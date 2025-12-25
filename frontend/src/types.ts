@@ -44,6 +44,16 @@ export const modalComp: ModalComponents = {
     ResetPasswordForm: "ResetPasswordForm",
 }
 
+type TableComponents = {
+    readonly NotificationStatus: string;
+    readonly DeleteButton: string;
+}
+
+export const tblComp: TableComponents = {
+    NotificationStatus: "NotificationStatus",
+    DeleteButton: "DeleteButton",
+}
+
 export type User = {
     token: string;
     id: number;
@@ -52,6 +62,13 @@ export type User = {
     role: string;
     status: string;
     imageUrl: string;
+}
+
+export type Notification = {
+    id: number;
+    textContent: string;
+    hasViewed: boolean;
+    createdAt: string;
 }
 
 export type ToastData = {
@@ -70,10 +87,4 @@ export type Store = {
     newEmailAddress: string;
     hasUnreadNotifications: boolean;
     user: User;
-}
-
-export type Notification = {
-    textContent: string;
-    hasViewed: boolean;
-    createdAt: string;
 }
