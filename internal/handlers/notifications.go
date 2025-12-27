@@ -75,7 +75,7 @@ func GetAllNotificationsForUser(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 200, notifications, "Retrieved all notifications associated with the user id")
 }
 
-// ?page=5&per_page=20&query=where.has_viewed.eq.false.orderby.id.desc
+// ?page=5&per_page=20
 func GetAllNotifications(c *fiber.Ctx) error {
 	// Expected query parameters
 	type queryParams struct {

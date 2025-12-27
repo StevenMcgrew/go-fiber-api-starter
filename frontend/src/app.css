@@ -128,3 +128,20 @@ dialog,
     border-radius: 50%;
     border: 1.6px solid white;
 }
+
+.transparent-btn {
+    background: none;
+    text-transform: none;
+	color: var(--nc-lk-1);
+}
+
+.transparent-btn:hover {
+    background: none;
+    text-decoration: underline;
+    text-decoration-color: gray;
+    text-underline-offset: 3px;
+}
+
+.transparent-btn:focus {
+    background: none;
+}
