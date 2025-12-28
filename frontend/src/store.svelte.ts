@@ -21,6 +21,7 @@ export const emptyToast: ToastData = {
 
 function createDefaultStore(): Store {
     const s: Store = {
+        adminPageView: "Users",
         baseFetchUrl: "http://127.0.0.1:8080/api/v1",
         baseStorageUrl: "http://127.0.0.1:8080/temp-storage",
         orientLoginBtns: orient.horiz,

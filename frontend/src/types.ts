@@ -76,7 +76,31 @@ export type ToastData = {
     text: string
 }
 
+export type TableData = Record<string, any>;
+
+export type Column = {
+    header: string;
+    sortable: boolean;
+    key: string;
+    component?: string;
+}
+
+export type Pagination = {
+    page: number;
+    perPage: number;
+    totalPages: number;
+    totalCount: number;
+}
+
+export type Sorting = {
+    key: string | null;
+    direction: "asc" | "desc";
+}
+
+export type AdminView = "Users" | "Notifications";
+
 export type Store = {
+    adminPageView: AdminView;
     baseFetchUrl: string;
     baseStorageUrl: string;
     orientLoginBtns: string;

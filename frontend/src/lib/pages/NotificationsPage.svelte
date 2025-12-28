@@ -4,7 +4,6 @@
     import DataTable from "../components/DataTable.svelte";
     import { tblComp, type Notification } from "../../types";
     import { customFetch } from "../../fetch";
-    import Header from "../components/Header.svelte";
 
     // Reactive state for the API lifecycle
     let notifications = $state<Notification[]>([]);

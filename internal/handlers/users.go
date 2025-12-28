@@ -79,7 +79,7 @@ func CreateUser(c *fiber.Ctx) error {
 	return utils.SendSuccessJSON(c, 201, userResponse, "Saved new user")
 }
 
-// ?page=5&per_page=20&query=where.status.eq.verified.and.role.eq.regular.orderby.id.asc,created_at.desc
+// ?page=5&per_page=20
 func GetAllUsers(c *fiber.Ctx) error {
 	// Expected query parameters
 	type queryParams struct {
